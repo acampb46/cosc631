@@ -170,15 +170,4 @@ const crawlUrls = async () => {
 };
 
 
-// Start the crawling process when the endpoint is hit
-router.get('/start', async (req, res) => {
-    try {
-        await crawlUrls(); // Start crawling
-        res.json({ message: 'Crawling process started.' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error starting crawling process' });
-    }
-});
-
 module.exports = router;

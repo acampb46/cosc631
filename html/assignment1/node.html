@@ -1,0 +1,41 @@
+<!-- node.js -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sum Calculator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Node Sum Calculator</h1>
+    <input type="number" id="num1" placeholder="Enter first integer" required>
+    <br>
+    <input type="number" id="num2" placeholder="Enter second integer" required>
+    <br><br>
+    <button onclick="calculateSum()">Calculate Sum</button>
+    <button class="reset-button" onclick="resetForm()">Reset</button>
+
+    <script>
+        function calculateSum() {
+            const num1 = parseInt(document.getElementById('num1').value);
+            const num2 = parseInt(document.getElementById('num2').value);
+
+            if (isNaN(num1) || isNaN(num2)) {
+                alert("Please enter valid integers.");
+                return;
+            }
+
+            const sum = num1 + num2;
+            alert("The sum is: " + sum);
+        }
+
+        function resetForm() {
+            document.getElementById('num1').value = '';
+            document.getElementById('num2').value = '';
+        }
+    </script>
+	<br>
+	<a href="/assignment1/index.html"><button>Back</button></a>
+</body>
+</html>

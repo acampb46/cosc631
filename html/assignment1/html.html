@@ -1,0 +1,61 @@
+<!-- html.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sum Calculator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Sum Calculator</h1>
+
+    <input id="num1" class="input-box" type="number" placeholder="Enter first integer" step="1">
+    <br>
+    <input id="num2" class="input-box" type="number" placeholder="Enter second integer" step="1">
+    <br>
+    <button onclick="calculateSum()">Calculate Sum</button>
+    <button class="reset-button" onclick="resetForm()">Reset</button>
+
+    <div id="error-message" class="error"></div>
+
+    <script>
+        function calculateSum() {
+            // Get the values of the two input boxes
+            const num1 = document.getElementById('num1').value;
+            const num2 = document.getElementById('num2').value;
+
+            // Clear previous error message
+            document.getElementById('error-message').textContent = "";
+
+            // Input validation to check if both inputs are integers
+            if (!isInteger(num1) || !isInteger(num2)) {
+                document.getElementById('error-message').textContent = "Please enter valid integers!";
+                return;
+            }
+
+            // Calculate the sum of the two integers
+            const sum = parseInt(num1) + parseInt(num2);
+
+            // Show the result in a popup window
+            alert("The sum is: " + sum);
+        }
+
+        // Function to check if a string is an integer
+        function isInteger(value) {
+            return /^-?\d+$/.test(value);  // Regex to check if input is an integer
+        }
+
+        // Function to reset the form
+        function resetForm() {
+            // Clear the input fields
+            document.getElementById('num1').value = '';
+            document.getElementById('num2').value = '';
+
+            // Clear any error messages
+            document.getElementById('error-message').textContent = '';
+        }
+    </script>
+    <a href="/assignment1/index.html"><button>Back</button></a>
+</body>
+</html>

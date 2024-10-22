@@ -1,0 +1,37 @@
+<!-- php.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHP Sum Calculator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>PHP Sum Calculator</h1>
+    <form action="php.html" method="post">
+        <input type="text" class="input-box" id="number1" name="number1" placeholder="Enter first integer" required>
+        <br>
+        <input type="text" class="input-box" id="number2" name="number2" placeholder="Enter second integer" required>
+        <br>
+        <button type="submit">Calculate</button>
+		<button class="reset-button" onclick="resetForm()">Reset</button>
+    </form>
+
+    <?php
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        // Get the numbers from the form
+        $number1 = $_POST['number1'];
+        $number2 = $_POST['number2'];
+
+        // Calculate the sum
+        $sum = $number1 + $number2;
+
+        // Output JavaScript to create the alert
+        echo "<script>alert('The sum is: " . htmlspecialchars($sum) . "');</script>";
+    }
+    ?>
+
+    <a href="/assignment1/index.html"><button>Back</button></a>
+</body>
+</html>

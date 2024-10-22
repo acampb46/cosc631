@@ -1,0 +1,51 @@
+<!-- Assignment 2 index.html --> 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tag Extractor</title><link rel="stylesheet" href="../assignment1/style.css">
+</head>
+<body>
+    <h1>HTML Tag Extractor</h1>
+    <form id="url-form">
+        <label for="url">Enter URL:</label>
+        <input type="text" id="url" name="url" required>
+        <button type="submit">Extract Tags</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('url-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const url = document.getElementById('url').value;
+
+            try {
+                const response = await fetch('https://gerardcosc631.com:12348/parser', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('result').innerText = `Unique tags count: ${data.uniqueCount}`;
+                } else {
+                    document.getElementById('result').innerText = `Error: ${data.error}`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerText = 'Failed to fetch the URL or parse HTML.';
+            }
+        });
+		
+    </script>
+	<a href="../index.html"><button>Back</button></a>
+</body>
+</html>
+

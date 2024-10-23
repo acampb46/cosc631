@@ -210,7 +210,7 @@ const crawlSingleUrl = async (browser, row) => {
                             pool.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [host], (err, results) => {
                                 if (err) throw err;
                                 if (results[0].count === 0) { // Only insert if the count is 0
-                                    connection.query(
+                                    pool.query(
                                         'INSERT INTO robotUrl (url) VALUES (?)',
                                         [host],
                                         (err) => {

@@ -67,7 +67,7 @@ const extractKeywordsAndDescription = (root) => {
     }
 
     // (d) Extract body text
-    const bodyText = root.querySelector('body')?.text || '';
+    const bodyText = root.querySelector('body').text || '';
     addKeywordsFromString(bodyText);
     if (!description) {
         description = bodyText.slice(0, 200);

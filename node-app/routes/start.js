@@ -117,11 +117,12 @@ const extractKeywordsAndDescription = (root) => {
                     const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
                     await page.setUserAgent(userAgent);
 
+
                     console.log(`Crawling URL: ${nextUrl}`);
                     let html;
                     try {
-                        await page.goto(nextUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-                        let html = await page.content();
+                        await page.goto(nextUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }); // Set to 60 seconds
+                        html = await page.content();
                         console.log(`Successfully crawled URL: ${nextUrl}`);
                     } catch (err) {
                         console.error(`Error navigating to URL: ${nextUrl}`, err);

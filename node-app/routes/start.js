@@ -118,6 +118,7 @@ const extractKeywordsAndDescription = (root) => {
                     await page.setUserAgent(userAgent);
 
                     console.log(`Crawling URL: ${nextUrl}`);
+                    let html;
                     try {
                         await page.goto(nextUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
                         let html = await page.content();
@@ -128,50 +129,50 @@ const extractKeywordsAndDescription = (root) => {
                         await page.close(); // Ensure the page is always closed
                     }
 
+                    if(html) {
+                        const root = parse(html);
+                        const {keywords, description} = extractKeywordsAndDescription(root);
 
-                    const root = parse(html);
-                    const { keywords, description } = extractKeywordsAndDescription(root);
+                        // Insert description
+                        try {
+                            await connection.query(
+                                'INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?',
+                                [nextUrl, description, description]
+                            );
+                            console.log(`Inserted description for URL: ${nextUrl}`);
+                        } catch (dbError) {
+                            console.error(`Error inserting description for URL: ${nextUrl}`, dbError);
+                        }
 
-                    // Insert description
-                    try {
-                        await connection.query(
-                            'INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?',
-                            [nextUrl, description, description]
-                        );
-                        console.log(`Inserted description for URL: ${nextUrl}`);
-                    } catch (dbError) {
-                        console.error(`Error inserting description for URL: ${nextUrl}`, dbError);
-                    }
+                        // Insert keywords
+                        for (const keyword of keywords) {
+                            const rank = (html.match(new RegExp(keyword, 'gi')) || []).length;
+                            await connection.query(
+                                'INSERT INTO urlKeyword (url, keyword, `rank`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `rank` = ?',
+                                [nextUrl, keyword, rank, rank]
+                            );
+                            console.log(`Inserted keyword: ${keyword}, Rank: ${rank}`);
+                        }
 
-                    // Insert keywords
-                    for (const keyword of keywords) {
-                        const rank = (html.match(new RegExp(keyword, 'gi')) || []).length;
-                        await connection.query(
-                            'INSERT INTO urlKeyword (url, keyword, `rank`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `rank` = ?',
-                            [nextUrl, keyword, rank, rank]
-                        );
-                        console.log(`Inserted keyword: ${keyword}, Rank: ${rank}`);
-                    }
+                        // Extract and insert new links into robotUrl
+                        const links = root.querySelectorAll('a').map(link => link.getAttribute('href')).filter(href => href);
+                        for (const link of links) {
+                            const absoluteUrl = new URL(link, nextUrl).href;
+                            const host = new URL(absoluteUrl).host;
 
-                    // Extract and insert new links into robotUrl
-                    const links = root.querySelectorAll('a').map(link => link.getAttribute('href')).filter(href => href);
-                    for (const link of links) {
-                        const absoluteUrl = new URL(link, nextUrl).href;
-                        const host = new URL(absoluteUrl).host;
+                            const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [host]);
+                            if (countResults[0].count === 0) {
+                                await connection.query('INSERT INTO robotUrl (url) VALUES (?)', [host]);
+                                console.log(`Inserted new URL to crawl: ${host}`);
+                            }
+                        }
 
-                        const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [host]);
-                        if (countResults[0].count === 0) {
-                            await connection.query('INSERT INTO robotUrl (url) VALUES (?)', [host]);
-                            console.log(`Inserted new URL to crawl: ${host}`);
+                        // Check if the number of entries in urlDescription is below n
+                        const [count] = await connection.query('SELECT COUNT(*) AS count FROM urlDescription');
+                        if (count[0].count < n) {
+                            console.log('Continuing to crawl due to insufficient entries in urlDescription');
                         }
                     }
-
-                    // Check if the number of entries in urlDescription is below n
-                    const [count] = await connection.query('SELECT COUNT(*) AS count FROM urlDescription');
-                    if (count[0].count < n) {
-                        console.log('Continuing to crawl due to insufficient entries in urlDescription');
-                    }
-
                 } catch (error) {
                     console.error(`Error crawling URL: ${nextUrl}`, error);
                 }

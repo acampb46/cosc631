@@ -121,7 +121,11 @@ const extractKeywordsAndDescription = (root) => {
                     console.log(`Crawling URL: ${nextUrl}`);
                     let html;
                     try {
-                        await page.goto(nextUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }); // Set to 60 seconds
+                        const response = await page.goto(nextUrl, { waitUntil: 'domcontentloaded', timeout: 60000 }); // Set to 60 seconds
+                        if (response && response.status() === 404) {
+                            console.error(`404 Not Found: ${nextUrl}`);
+                            return; // Exit early if the page is not found
+                        }
                         html = await page.content();
                         console.log(`Successfully crawled URL: ${nextUrl}`);
                     } catch (err) {

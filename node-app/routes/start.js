@@ -18,6 +18,11 @@ const connection = mysql.createPool({
     queueLimit: 0
 });
 
+connection.connect((err) => {
+    if (err) throw err;
+    console.log('Connected to searchEngine database with start.js');
+});
+
 // Function to extract keywords and description from the HTML content
 const extractKeywordsAndDescription = (root) => {
     let keywords = new Set();

@@ -91,7 +91,7 @@ const extractKeywordsAndDescription = (root) => {
         try {
             // Launch a single browser instance
             browser = await puppeteer.launch({
-                headless: true,
+                headless: false,
                 args: ['--no-sandbox', '--disable-setuid-sandbox']
             });
 

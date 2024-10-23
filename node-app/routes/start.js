@@ -71,15 +71,16 @@ const crawlUrls = async () => {
                     nextUrl = 'https://' + nextUrl;  // Default to https if protocol is missing
                 }
 
+                let browser;
                 try {
-                    // 2. Fetch the page content using Puppeteer
+                    // 2. Launch Puppeteer and fetch the page content
                     const urlObj = new URL(nextUrl);
                     const host = urlObj.host; // Gives just the host name
 
                     console.log(`Crawling URL: ${nextUrl}`);
                     console.log(`Extracted host: ${host}`);
 
-                    const browser = await puppeteer.launch({
+                    browser = await puppeteer.launch({
                         headless: true,
                         args: ['--no-sandbox', '--disable-setuid-sandbox']
                     });
@@ -91,18 +92,15 @@ const crawlUrls = async () => {
                     console.log("Navigating to URL...");
                     await page.goto(nextUrl, { waitUntil: 'networkidle0', timeout: 0 });
                     const html = await page.content();
-                    console.log("Closing Puppeteer browser");
-                    await browser.close();
-
                     console.log('Page fetched successfully.');
 
-                    // 3. Parse the HTML document using node-html-parser
+                    // Parse the HTML document using node-html-parser
                     const root = parse(html);
 
-                    // 4. Extract keywords and description from <meta> tags
+                    // Extract keywords and description from <meta> tags
                     const { keywords, description } = extractKeywordsAndDescription(root);
 
-                    // 5. Insert URL and description into urlDescription table
+                    // Insert URL and description into urlDescription table
                     connection.query(
                         'INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?',
                         [nextUrl, description, description],
@@ -112,7 +110,7 @@ const crawlUrls = async () => {
                         }
                     );
 
-                    // 6. Insert each keyword and its rank into urlKeyword table
+                    // Insert each keyword and its rank into urlKeyword table
                     for (const keyword of keywords) {
                         const rank = (html.match(new RegExp(keyword, 'gi')) || []).length;
                         connection.query(
@@ -125,7 +123,7 @@ const crawlUrls = async () => {
                         );
                     }
 
-                    // 7. Extract all links and insert them into robotUrl table (if needed)
+                    // Extract all links and insert them into robotUrl table (if needed)
                     const links = root.querySelectorAll('a').map(link => link.getAttribute('href')).filter(href => href);
                     for (const link of links) {
                         const absoluteUrl = new URL(link, nextUrl).href; // Make sure to convert relative links to absolute
@@ -149,7 +147,7 @@ const crawlUrls = async () => {
                         });
                     }
 
-                    // 8. Check the number of entries in urlDescription table
+                    // Check the number of entries in urlDescription table
                     connection.query('SELECT COUNT(*) AS count FROM urlDescription', (err, countResults) => {
                         if (err) {
                             console.error('Error counting entries in urlDescription:', err);
@@ -158,10 +156,14 @@ const crawlUrls = async () => {
                             console.log('Continuing to crawl due to insufficient entries in urlDescription');
                         }
                     });
-
                 } catch (error) {
                     console.error('Error fetching URL:', error);
-                    reject('Error fetching URL');
+                } finally {
+                    // Close the Puppeteer browser as soon as possible to free up CPU
+                    if (browser) {
+                        console.log("Closing Puppeteer browser...");
+                        await browser.close();
+                    }
                 }
             }
             resolve(); // Resolve when done with all URLs

@@ -12,7 +12,10 @@ const connection = mysql.createPool({
     host: '3.19.85.118',
     user: 'COSC631',
     password: 'COSC631',
-    database: 'searchEngine'
+    database: 'searchEngine',
+    waitForConnections: true,
+    connectionLimit: 10,  // Limit the number of connections
+    queueLimit: 0
 });
 
 // Function to extract keywords and description from the HTML content

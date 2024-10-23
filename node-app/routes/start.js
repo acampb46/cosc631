@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router(); // For using routes with node.js
-const mysql = require('mysql2'); // MySQL for connection to the database
+const mysql = require('mysql2/promise'); // MySQL for connection to the database
 const puppeteer = require('puppeteer'); // Use Puppeteer for web crawling
 const { parse } = require('node-html-parser'); // node-html-parser for HTML parsing
 
@@ -8,18 +8,29 @@ const { parse } = require('node-html-parser'); // node-html-parser for HTML pars
 const k = 10; // Number of keywords to extract
 const n = 500; // Minimum number of entries in urlDescription
 
-// MySQL connection setup
-const connection = mysql.createConnection({
+const connection = mysql.createPool({
     host: '3.19.85.118',
     user: 'COSC631',
     password: 'COSC631',
-    database: 'searchEngine'
+    database: 'searchEngine',
+    waitForConnections: true,
+    connectionLimit: 10,  // Limit the number of connections
+    queueLimit: 0
 });
 
-connection.connect((err) => {
-    if (err) throw err;
-    console.log('Connected to searchEngine database with start.js');
-});
+// Test connection by acquiring a connection from the pool
+async function testConnection() {
+    try {
+        const conn = await connection.getConnection();
+        console.log('Connected to searchEngine database with start.js');
+        conn.release(); // Release the connection back to the pool
+    } catch (err) {
+        console.error('Error connecting to the database:', err);
+    }
+}
+
+// Call the test connection function
+testConnection();
 
 // Function to extract keywords and description from the HTML content
 const extractKeywordsAndDescription = (root) => {

@@ -18,7 +18,7 @@ const connection = mysql.createPool({
     queueLimit: 0
 });
 
-connection.connect((err) => {
+connection.pool((err) => {
     if (err) throw err;
     console.log('Connected to searchEngine database with start.js');
 });

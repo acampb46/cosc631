@@ -80,8 +80,9 @@ const extractKeywordsAndDescription = (root) => {
 // Use an IIFE to enable dynamic import of p-limit
 (async () => {
     const pLimit = (await import('p-limit')).default;
+    console.log('p-limit imported successfully');
 
-    const limit = pLimit(5); // Adjust concurrency limit based on needs
+    const limit = pLimit(10); // Adjust concurrency limit based on needs
 
     // Function to start the crawling process
     const crawlUrls = async () => {
@@ -94,8 +95,14 @@ const extractKeywordsAndDescription = (root) => {
                 args: ['--no-sandbox', '--disable-setuid-sandbox']
             });
 
+            console.log('Puppeteer browser launched successfully');
+
             const [results] = await connection.query('SELECT * FROM robotUrl ORDER BY pos');
-            console.log('Fetched URLs from robotUrl:', results);
+            if (results.length === 0) {
+                console.log('No URLs found in the robotUrl table.');
+            } else {
+                console.log('Fetched URLs from robotUrl:', results);
+            }
 
             const crawlingPromises = results.map(row => limit(async () => {
                 let nextUrl = row.url;
@@ -113,7 +120,8 @@ const extractKeywordsAndDescription = (root) => {
                     console.log(`Crawling URL: ${nextUrl}`);
                     try {
                         await page.goto(nextUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-                        const html = await page.content();
+                        let html = await page.content();
+                        console.log(`Successfully crawled URL: ${nextUrl}`);
                     } catch (err) {
                         console.error(`Error navigating to URL: ${nextUrl}`, err);
                     } finally {
@@ -184,6 +192,7 @@ const extractKeywordsAndDescription = (root) => {
 
     // Start the crawling process when the endpoint is hit
     router.get('/start', async (req, res) => {
+        console.log('Crawl start endpoint hit.');
         try {
             await crawlUrls();
             res.json({ message: 'Crawling process started.' });

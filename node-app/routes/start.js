@@ -25,7 +25,7 @@ connection.connect((err) => {
 const extractKeywordsAndDescription = (root) => {
     let keywords = new Set();
     let description = '';
-
+    
     // Helper function to add keywords from a string
     const addKeywordsFromString = (str) => {
         str.split(/\s+/)
@@ -36,16 +36,30 @@ const extractKeywordsAndDescription = (root) => {
     // (a) Extract meta keywords
     const metaKeywords = root.querySelector('meta[name="keywords"]');
     if (metaKeywords) {
-        const keywordContent = metaKeywords.getAttribute('content');
-        if (keywordContent) {
-            addKeywordsFromString(keywordContent);  // Only add keywords from <meta> tag
+        addKeywordsFromString(metaKeywords.getAttribute('content'));
+    }
+
+    // (b) Extract title
+    const titleTag = root.querySelector('title');
+    if (titleTag) {
+        addKeywordsFromString(titleTag.text);
+        description = titleTag.text.slice(0, 200);
+    }
+
+    // (c) Extract headings
+    const headings = root.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    for (let heading of headings) {
+        addKeywordsFromString(heading.text);
+        if (!description) {
+            description = heading.text.slice(0, 200);
         }
     }
 
-    // (b) Extract meta description
-    const metaDescription = root.querySelector('meta[name="description"]');
-    if (metaDescription) {
-        description = metaDescription.getAttribute('content')?.slice(0, 200) || '';
+    // (d) Extract body text
+    const bodyText = root.querySelector('body')?.text || '';
+    addKeywordsFromString(bodyText);
+    if (!description) {
+        description = bodyText.slice(0, 200);
     }
 
     // Return the first k keywords and the description
@@ -78,7 +92,7 @@ const crawlUrls = async () => {
 
                     console.log(`Crawling URL: ${nextUrl}`);
                     console.log(`Extracted host: ${host}`);
-
+                    
                     const browser = await puppeteer.launch({
                         headless: true,
                         args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -98,8 +112,8 @@ const crawlUrls = async () => {
 
                     // 3. Parse the HTML document using node-html-parser
                     const root = parse(html);
-
-                    // 4. Extract keywords and description from <meta> tags
+                    
+                    // 4. Extract keywords and description
                     const { keywords, description } = extractKeywordsAndDescription(root);
 
                     // 5. Insert URL and description into urlDescription table
@@ -125,7 +139,7 @@ const crawlUrls = async () => {
                         );
                     }
 
-                    // 7. Extract all links and insert them into robotUrl table (if needed)
+                    // 7. Extract all links and insert them into robotUrl table
                     const links = root.querySelectorAll('a').map(link => link.getAttribute('href')).filter(href => href);
                     for (const link of links) {
                         const absoluteUrl = new URL(link, nextUrl).href; // Make sure to convert relative links to absolute
@@ -156,6 +170,8 @@ const crawlUrls = async () => {
                             reject('Error counting entries');
                         } else if (countResults[0].count < n) {
                             console.log('Continuing to crawl due to insufficient entries in urlDescription');
+                            // Exit the processing for this URL and continue with the next iteration
+                            return; // This will skip to the next URL in the for loop
                         }
                     });
 
@@ -169,5 +185,15 @@ const crawlUrls = async () => {
     });
 };
 
+// Start the crawling process when the endpoint is hit
+router.get('/start', async (req, res) => {
+    try {
+        await crawlUrls(); // Start crawling
+        res.json({ message: 'Crawling process started.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error starting crawling process' });
+    }
+});
 
 module.exports = router;

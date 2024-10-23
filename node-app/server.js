@@ -59,5 +59,5 @@ const server = https.createServer(options, app);
 
 server.listen(port, () => {
     console.log(`Server is running on https://gerardcosc631.com:${port}`);
-	startCrawler(); //Start crawler when the server starts
+	//startCrawler(); //Start crawler when the server starts
 });

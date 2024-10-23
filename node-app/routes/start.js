@@ -3,7 +3,10 @@ const router = express.Router(); // For using routes with node.js
 const mysql = require('mysql2/promise'); // MySQL with promise support
 const puppeteer = require('puppeteer'); // Use Puppeteer for web crawling
 const { parse } = require('node-html-parser'); // node-html-parser for HTML parsing
-const pLimit = require('p-limit'); // p-limit for controlling concurrency
+let pLimit;
+(async () => {
+    pLimit = await import('p-limit');
+})(); // p-limit for controlling concurrency
 
 // Constants
 const k = 10; // Number of keywords to extract

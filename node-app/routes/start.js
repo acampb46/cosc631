@@ -139,7 +139,7 @@ const crawlSingleUrl = async (browser, row) => {
     const crawlUrls = async () => {
         return new Promise((resolve, reject) => {
             // 1. Get all available URLs from the robotUrl table ordered by pos
-            connection.query('SELECT * FROM robotUrl ORDER BY pos', async (err, results) => {
+            pool.query('SELECT * FROM robotUrl ORDER BY pos', async (err, results) => {
                 if (err) {
                     console.error('Error fetching URLs:', err);
                     return reject('Database query error');
@@ -178,7 +178,7 @@ const crawlSingleUrl = async (browser, row) => {
                         const { keywords, description } = extractKeywordsAndDescription(root);
 
                         // 5. Insert URL and description into urlDescription table
-                        connection.query(
+                        pool.query(
                             'INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?',
                             [nextUrl, description, description],
                             (err) => {
@@ -190,7 +190,7 @@ const crawlSingleUrl = async (browser, row) => {
                         // 6. Insert each keyword and its rank into urlKeyword table
                         for (const keyword of keywords) {
                             const rank = (html.match(new RegExp(keyword, 'gi')) || []).length;
-                            connection.query(
+                            pool.query(
                                 'INSERT INTO urlKeyword (url, keyword, `rank`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `rank` = ?',
                                 [nextUrl, keyword, rank, rank],
                                 (err) => {
@@ -207,7 +207,7 @@ const crawlSingleUrl = async (browser, row) => {
                             const host = new URL(absoluteUrl).host; // Extract the host from the absolute URL
 
                             // Insert the host into robotUrl table
-                            connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [host], (err, results) => {
+                            pool.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [host], (err, results) => {
                                 if (err) throw err;
                                 if (results[0].count === 0) { // Only insert if the count is 0
                                     connection.query(
@@ -223,7 +223,7 @@ const crawlSingleUrl = async (browser, row) => {
                         }
 
                         // 8. Check the number of entries in urlDescription table
-                        connection.query('SELECT COUNT(*) AS count FROM urlDescription', (err, countResults) => {
+                        pool.query('SELECT COUNT(*) AS count FROM urlDescription', (err, countResults) => {
                             if (err) {
                                 console.error('Error counting entries in urlDescription:', err);
                                 reject('Error counting entries');

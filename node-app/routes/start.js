@@ -95,6 +95,7 @@ const extractKeywordsAndDescription = (root) => {
             });
 
             const [results] = await connection.query('SELECT * FROM robotUrl ORDER BY pos');
+            console.log('Fetched URLs from robotUrl:', results);
 
             const crawlingPromises = results.map(row => limit(async () => {
                 let nextUrl = row.url;
@@ -102,24 +103,37 @@ const extractKeywordsAndDescription = (root) => {
                     nextUrl = 'https://' + nextUrl; // Default to https
                 }
 
+                console.log(`Preparing to crawl URL: ${nextUrl}`);
+
                 try {
                     const page = await browser.newPage();
-                    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+                    const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
+                    await page.setUserAgent(userAgent);
 
                     console.log(`Crawling URL: ${nextUrl}`);
-                    await page.goto(nextUrl, { waitUntil: 'networkidle0', timeout: 0 });
-                    const html = await page.content();
-                    await page.close(); // Close the page after crawling
+                    try {
+                        await page.goto(nextUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+                        const html = await page.content();
+                    } catch (err) {
+                        console.error(`Error navigating to URL: ${nextUrl}`, err);
+                    } finally {
+                        await page.close(); // Ensure the page is always closed
+                    }
+
 
                     const root = parse(html);
                     const { keywords, description } = extractKeywordsAndDescription(root);
 
                     // Insert description
-                    await connection.query(
-                        'INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?',
-                        [nextUrl, description, description]
-                    );
-                    console.log(`Inserted description for URL: ${nextUrl}`);
+                    try {
+                        await connection.query(
+                            'INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?',
+                            [nextUrl, description, description]
+                        );
+                        console.log(`Inserted description for URL: ${nextUrl}`);
+                    } catch (dbError) {
+                        console.error(`Error inserting description for URL: ${nextUrl}`, dbError);
+                    }
 
                     // Insert keywords
                     for (const keyword of keywords) {

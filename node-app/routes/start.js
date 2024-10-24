@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
 const cloudscraper = require('cloudscraper'); // Use cloudscraper for HTTP requests
+const puppeteer = require('puppeteer'); // Import puppeteer for handling JavaScript
 const { parse } = require('node-html-parser');
 
 // Constants
@@ -84,6 +85,45 @@ const extractKeywordsAndDescription = (root) => {
     return { keywords: Array.from(keywords).slice(0, k), description };
 };
 
+// Function to fetch HTML with cloudscraper, fallback to puppeteer if necessary
+const fetchHtml = async (url) => {
+    try {
+        const html = await cloudscraper.get({
+            uri: url,
+            gzip: true, // Enable Gzip compression
+            followRedirect: true,  // Follow redirects
+            jar: true,               // Enable cookies
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+        });
+        console.log('Fetched HTML with cloudscraper');
+        return html;
+    } catch (error) {
+        console.error('Cloudscraper failed, switching to Puppeteer:', error.message);
+        return await fetchHtmlWithPuppeteer(url);
+    }
+};
+
+// Function to fetch HTML using puppeteer
+const fetchHtmlWithPuppeteer = async (url) => {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    try {
+        await page.goto(url, { waitUntil: 'domcontentloaded' }); // Wait for the DOM to load
+        const html = await page.content(); // Get the HTML content
+        console.log('Fetched HTML with Puppeteer');
+        return html;
+    } catch (error) {
+        console.error('Error fetching HTML with Puppeteer:', error);
+        throw error; // Rethrow error for handling in crawlUrls
+    } finally {
+        await page.close();
+        await browser.close();
+    }
+};
+
 const crawlUrls = async () => {
     try {
         const [results] = await connection.query('SELECT * FROM robotUrl ORDER BY pos');
@@ -99,15 +139,7 @@ const crawlUrls = async () => {
 
             try {
                 console.log(`Crawling URL: ${nextUrl}`);
-                const html = await cloudscraper.get({
-                    uri: nextUrl,
-                    gzip: true, // Enable Gzip compression
-                    followRedirect: true,  // Follow redirects
-                    jar: true,               // Enable cookies
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                    }
-                }); // Use cloudscraper to fetch HTML
+                const html = await fetchHtml(nextUrl); // Use the new fetchHtml function
                 console.log(`Successfully crawled URL: ${nextUrl}`);
 
                 const root = parse(html);

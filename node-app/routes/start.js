@@ -101,6 +101,7 @@ const crawlUrls = async () => {
                 console.log(`Crawling URL: ${nextUrl}`);
                 const html = await cloudscraper.get({
                     uri: nextUrl,
+                    gzip: true, // Enable Gzip compression
                     followRedirect: true,  // Follow redirects
                     jar: true,               // Enable cookies
                     headers: {

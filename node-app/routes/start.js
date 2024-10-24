@@ -89,7 +89,9 @@ const crawlUrls = async () => {
 
     try {
         browser = await puppeteer.launch({
-            headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox']
+            headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            defaultViewport: null, // Ensures Puppeteer doesn't use too much memory on rendering
+            timeout: 0  // This should disable the timeout globally for all navigation calls
         });
 
         const [results] = await connection.query('SELECT * FROM robotUrl ORDER BY pos');
@@ -110,7 +112,7 @@ const crawlUrls = async () => {
 
                 console.log(`Crawling URL: ${nextUrl}`);
                 try {
-                    await page.goto(nextUrl, {waitUntil: 'domcontentloaded', timeout: 60000}); // Timeout set to 60 seconds
+                    await page.goto(nextUrl, {waitUntil: 'networkidle2', timeout: 0});
                     let html = await page.content();
                     console.log(`Successfully crawled URL: ${nextUrl}`);
 

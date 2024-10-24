@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
-const { chromium } = require('playwright'); // Use Playwright
+const {chromium} = require('playwright'); // Use Playwright
 const cloudscraper = require('cloudscraper'); // Use cloudscraper
-const { solveCaptcha } = require('2captcha'); // Use for solving CAPTCHA
-const { parse } = require('node-html-parser');
+const {solveCaptcha} = require('2captcha'); // Use for solving CAPTCHA
+const {parse} = require('node-html-parser');
 
 require('dotenv').config();
 // Environment Variables
@@ -87,15 +87,14 @@ const extractKeywordsAndDescription = (root) => {
         description = bodyText.slice(0, 200);
     }
 
-    return { keywords: Array.from(keywords).slice(0, k), description };
+    return {keywords: Array.from(keywords).slice(0, k), description};
 };
 
 // Function to solve CAPTCHA using 2Captcha
 const solveCaptchaWith2Captcha = async (captchaImage) => {
     try {
         const captchaId = await solveCaptcha(captchaApiKey, {
-            method: 'post',
-            body: captchaImage
+            method: 'post', body: captchaImage
         });
 
         const result = await waitForCaptchaSolution(captchaId);
@@ -124,24 +123,24 @@ const checkCaptchaSolution = async (captchaId, apiKey) => {
     try {
         const response = await axios.get(`https://2captcha.com/res.php`, {
             params: {
-                key: apiKey,
-                action: 'get',
-                id: captchaId,
+                key: apiKey, action: 'get', id: captchaId,
             },
         });
         return response.data;
     } catch (error) {
         console.error('Error checking CAPTCHA solution:', error);
-        return { status: 'error', request: captchaId };
+        return {status: 'error', request: captchaId};
     }
 };
 
 // Function to fetch HTML with Playwright (for JavaScript-heavy pages)
 const fetchHtmlWithPlaywright = async (url) => {
     try {
-        const browser = await chromium.launch({ headless: true });
+        const browser = await chromium.launch({headless: true});
         const page = await browser.newPage();
-        await page.goto(url, { waitUntil: 'networkidle' });
+        await page.goto(url, {waitUntil: 'networkidle'});
+
+        await page.waitForSelector('body:not(.loading)', {timeout: 60000});
 
         const captchaElement = await page.$('#captcha');
         if (captchaElement) {
@@ -156,7 +155,7 @@ const fetchHtmlWithPlaywright = async (url) => {
         await browser.close();
         return html;
     } catch (error) {
-        console.error(`Error navigating to URL ${url}:`, error);
+        console.error(`Error navigating to URL with Playwright ${url}:`, error);
         return null;
     }
 };
@@ -164,7 +163,14 @@ const fetchHtmlWithPlaywright = async (url) => {
 // Function to fetch HTML with cloudscraper
 const fetchHtmlWithCloudscraper = async (url) => {
     try {
-        const response = await cloudscraper.get(url);
+        const response = await cloudscraper.get(url, {
+            // Wait for the content to be fully loaded
+            resolveWithFullResponse: true,
+            method: 'GET',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            },
+        });
 
         // Check if the response contains valid content
         if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -236,7 +242,7 @@ const crawlUrls = async () => {
                 }
 
                 const root = parse(html);
-                const { keywords, description } = extractKeywordsAndDescription(root);
+                const {keywords, description} = extractKeywordsAndDescription(root);
 
                 // Insert description into the database
                 await connection.query('INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?', [nextUrl, description, description]);
@@ -281,10 +287,10 @@ const crawlUrls = async () => {
 router.get('/start', async (req, res) => {
     try {
         await crawlUrls();
-        res.json({ message: 'Crawling process finished.' });
+        res.json({message: 'Crawling process finished.'});
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error starting crawling process' });
+        res.status(500).json({error: 'Error starting crawling process'});
     }
 });
 

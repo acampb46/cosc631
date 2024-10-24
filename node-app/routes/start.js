@@ -172,13 +172,7 @@ const fetchHtmlWithCloudscraper = async (url) => {
             },
         });
 
-        // Check if the response contains valid content
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-            return response; // Valid content
-        } else {
-            console.warn(`Cloudscraper response did not contain valid content for URL: ${url}`);
-            return null; // Invalid content, return null
-        }
+        return response;
     } catch (error) {
         console.error(`Error fetching URL with cloudscraper ${url}:`, error);
         return null; // Error, return null

@@ -99,7 +99,14 @@ const crawlUrls = async () => {
 
             try {
                 console.log(`Crawling URL: ${nextUrl}`);
-                const html = await cloudscraper.get(nextUrl); // Use cloudscraper to fetch HTML
+                const html = await cloudscraper.get({
+                    uri: nextUrl,
+                    followRedirect: true,  // Follow redirects
+                    jar: true,               // Enable cookies
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    }
+                }); // Use cloudscraper to fetch HTML
                 console.log(`Successfully crawled URL: ${nextUrl}`);
 
                 const root = parse(html);

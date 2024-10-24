@@ -27,12 +27,13 @@ require('dotenv').config();
 const dbHost = process.env.DB_HOST;
 const dbUser = process.env.DB_USER;
 const dbPassword = process.env.DB_PASSWORD;
+const dbName = process.env.DB_NAME;
 
 // MySQL connection setup for parser db
 const db = mysql.createConnection({
-    host: dbHost,
-    user: dbUser,
-    password: dbPassword,
+    host: '3.19.85.118',
+    user: 'COSC631',
+    password: 'COSC631',
     database: 'htmlTags'
 });
 

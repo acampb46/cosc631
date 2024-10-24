@@ -31,6 +31,7 @@ async function testConnection() {
 
 testConnection();
 
+// Function to extract keywords and description from the HTML content
 const extractKeywordsAndDescription = (root) => {
     let keywords = new Set();
     let description = '';
@@ -41,32 +42,46 @@ const extractKeywordsAndDescription = (root) => {
             .forEach(word => keywords.add(word));
     };
 
+    // Extract meta keywords if available
     const metaKeywords = root.querySelector('meta[name="keywords"]');
     if (metaKeywords) {
         addKeywordsFromString(metaKeywords.getAttribute('content'));
     }
 
-    const titleTag = root.querySelector('title');
-    if (titleTag) {
-        addKeywordsFromString(titleTag.text);
-        description = titleTag.text.slice(0, 200);
+    // Try to extract meta description first
+    const metaDescription = root.querySelector('meta[name="description"]');
+    if (metaDescription) {
+        description = metaDescription.getAttribute('content').slice(0, 200);
     }
 
-    const headings = root.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    for (let heading of headings) {
-        addKeywordsFromString(heading.text);
-        if (!description) {
-            description = heading.text.slice(0, 200);
+    // Fallback to title if meta description is not found
+    if (!description) {
+        const titleTag = root.querySelector('title');
+        if (titleTag) {
+            addKeywordsFromString(titleTag.text);
+            description = titleTag.text.slice(0, 200);
         }
     }
 
-    const bodyText = root.querySelector('body')?.text || '';
-    addKeywordsFromString(bodyText);
+    // Further fallback to headings (h1-h6)
     if (!description) {
+        const headings = root.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        for (let heading of headings) {
+            addKeywordsFromString(heading.text);
+            if (!description) {
+                description = heading.text.slice(0, 200);
+            }
+        }
+    }
+
+    // Finally, use the body text as a last resort
+    if (!description) {
+        const bodyText = root.querySelector('body')?.text || '';
+        addKeywordsFromString(bodyText);
         description = bodyText.slice(0, 200);
     }
 
-    return {keywords: Array.from(keywords).slice(0, k), description};
+    return { keywords: Array.from(keywords).slice(0, k), description };
 };
 
 const crawlUrls = async () => {
@@ -149,7 +164,7 @@ const crawlUrls = async () => {
 router.get('/start', async (req, res) => {
     try {
         await crawlUrls();
-        res.json({message: 'Crawling process started.'});
+        res.json({message: 'Crawling process end.'});
     } catch (error) {
         console.error(error);
         res.status(500).json({error: 'Error starting crawling process'});

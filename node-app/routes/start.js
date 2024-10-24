@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
-const cloudscraper = require('cloudscraper'); // Use cloudscraper for HTTP requests
-const puppeteer = require('puppeteer'); // Import puppeteer for handling JavaScript
+const { chromium } = require('playwright'); // Use Playwright instead of Puppeteer
+const axios = require('axios'); // For handling non-JavaScript heavy websites
 const { parse } = require('node-html-parser');
 
 // Constants
@@ -85,62 +85,47 @@ const extractKeywordsAndDescription = (root) => {
     return { keywords: Array.from(keywords).slice(0, k), description };
 };
 
-// Function to fetch HTML with cloudscraper, fallback to puppeteer if necessary
-const fetchHtml = async (url) => {
+// Function to fetch HTML with Playwright (for JavaScript-heavy pages)
+const fetchHtmlWithPlaywright = async (url) => {
     try {
-        const html = await cloudscraper.get({
-            uri: url,
-            gzip: true, // Enable Gzip compression
-            followRedirect: true,  // Follow redirects
-            jar: true,               // Enable cookies
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            }
-        });
-        console.log('Fetched HTML with cloudscraper');
+        const browser = await chromium.launch({ headless: true }); // Launch Chromium browser
+        const page = await browser.newPage();
+        await page.goto(url, { waitUntil: 'networkidle' }); // Wait for page load
+        const html = await page.content(); // Get HTML content of the page
+        await browser.close(); // Close browser
         return html;
     } catch (error) {
-        console.error('Cloudscraper failed, switching to Puppeteer:', error.message);
-        return await fetchHtmlWithPuppeteer(url);
+        console.error(`Error navigating to URL ${url}:`, error);
+        return null;
     }
 };
 
-// Function to fetch HTML using puppeteer
-const fetchHtmlWithPuppeteer = async (url) => {
-    const browser = await puppeteer.launch({
-        headless: true, // Set to false if you want to see the browser; set to true for headless mode
-        args: [
-            '--no-sandbox', // Recommended for server environments
-            '--disable-setuid-sandbox', // Recommended for server environments
-            '--disable-web-security', // Disable web security for all pages
-            '--disable-infobars', // Disables infobars
-            '--disable-dev-shm-usage', // Overcome limited resource problems
-        ],
-    });
-
-    const page = await browser.newPage();
-
-    // Set necessary headers to mimic a real browser
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
-    await page.setExtraHTTPHeaders({
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
-    });
-
+// Function to fetch HTML using Axios (for non-JavaScript heavy pages)
+const fetchHtmlWithAxios = async (url) => {
     try {
-        await page.goto(url, {
-            waitUntil: 'domcontentloaded', // Wait for DOM to be loaded
-            timeout: 30000, // Set a timeout for navigation
+        const response = await axios.get(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            },
         });
-        const html = await page.content(); // Get the HTML content
-        console.log('Fetched HTML with Puppeteer');
-        return html;
+        return response.data; // The HTML content
     } catch (error) {
-        console.error('Error fetching HTML with Puppeteer:', error);
-        throw error; // Rethrow error for handling in crawlUrls
-    } finally {
-        await page.close();
-        await browser.close();
+        console.error(`Error fetching URL ${url}:`, error);
+        return null;
+    }
+};
+
+// Function to determine whether to use Playwright or Axios based on content
+const fetchHtml = async (url) => {
+    try {
+        const html = await fetchHtmlWithAxios(url); // Try with Axios first
+        if (html) {
+            return html;
+        }
+        // If Axios fails, fall back to Playwright
+        return await fetchHtmlWithPlaywright(url);
+    } catch (error) {
+        console.error(`Error fetching HTML from ${url}:`, error);
     }
 };
 
@@ -159,8 +144,10 @@ const crawlUrls = async () => {
 
             try {
                 console.log(`Crawling URL: ${nextUrl}`);
-                const html = await fetchHtml(nextUrl); // Use the new fetchHtml function
-                console.log(`Successfully crawled URL: ${nextUrl}`);
+                const html = await fetchHtml(nextUrl); // Fetch HTML content
+                if (!html) {
+                    continue; // Skip if fetching fails
+                }
 
                 const root = parse(html);
                 const { keywords, description } = extractKeywordsAndDescription(root);
@@ -192,7 +179,7 @@ const crawlUrls = async () => {
                 // Check if the number of entries in urlDescription is below the minimum threshold
                 const [count] = await connection.query('SELECT COUNT(*) AS count FROM urlDescription');
                 if (count[0].count >= n) {
-                    console.log('Crawling process completed.');
+                    console.log('urlDescription has reached 500 entries.');
                     break;
                 }
             } catch (err) {
@@ -207,7 +194,7 @@ const crawlUrls = async () => {
 router.get('/start', async (req, res) => {
     try {
         await crawlUrls();
-        res.json({ message: 'Crawling process completed.' });
+        res.json({ message: 'Crawling process finished.' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error starting crawling process' });

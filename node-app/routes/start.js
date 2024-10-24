@@ -161,14 +161,21 @@ const fetchHtmlWithPlaywright = async (url) => {
     }
 };
 
-// Function to fetch HTML using cloudscraper (for Cloudflare protected sites)
+// Function to fetch HTML with cloudscraper
 const fetchHtmlWithCloudscraper = async (url) => {
     try {
-        const html = await cloudscraper.get(url);
-        return html; // The HTML content
+        const response = await cloudscraper.get(url);
+
+        // Check if the response contains valid content
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+            return response; // Valid content
+        } else {
+            console.warn(`Cloudscraper response did not contain valid content for URL: ${url}`);
+            return null; // Invalid content, return null
+        }
     } catch (error) {
         console.error(`Error fetching URL with cloudscraper ${url}:`, error);
-        return null;
+        return null; // Error, return null
     }
 };
 

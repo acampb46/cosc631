@@ -107,11 +107,36 @@ const fetchHtml = async (url) => {
 
 // Function to fetch HTML using puppeteer
 const fetchHtmlWithPuppeteer = async (url) => {
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+        headless: false, // Set to false if you want to see the browser; set to true for headless mode
+        defaultViewport: {
+            width: 1280, // Set width
+            height: 800, // Set height
+        },
+        args: [
+            '--no-sandbox', // Recommended for server environments
+            '--disable-setuid-sandbox', // Recommended for server environments
+            '--disable-web-security', // Disable web security for all pages
+            '--disable-infobars', // Disables infobars
+            '--disable-dev-shm-usage', // Overcome limited resource problems
+            '--window-size=1280,800', // Set window size
+        ],
+    });
+
     const page = await browser.newPage();
 
+    // Set necessary headers to mimic a real browser
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+    await page.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+    });
+
     try {
-        await page.goto(url, { waitUntil: 'domcontentloaded' }); // Wait for the DOM to load
+        await page.goto(url, {
+            waitUntil: 'domcontentloaded', // Wait for DOM to be loaded
+            timeout: 30000, // Set a timeout for navigation
+        });
         const html = await page.content(); // Get the HTML content
         console.log('Fetched HTML with Puppeteer');
         return html;

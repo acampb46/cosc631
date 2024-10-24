@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
-const { chromium } = require('playwright'); // Use Playwright instead of Puppeteer
-const axios = require('axios'); // For handling non-JavaScript heavy websites
+const { chromium } = require('playwright'); // Use Playwright
+const cloudscraper = require('cloudscraper'); // Use cloudscraper
 const { solveCaptcha } = require('2captcha'); // Use for solving CAPTCHA
 const { parse } = require('node-html-parser');
 
@@ -13,16 +13,17 @@ const dbUser = process.env.DB_USER;
 const dbPassword = process.env.DB_PASSWORD;
 const dbName = process.env.DB_NAME;
 const captchaApiKey = process.env.CAPTCHA_API_KEY;
+
 // Constants
 const k = 10; // Number of keywords to extract
 const n = 500; // Minimum number of entries in urlDescription
 
 // MySQL connection pool
 const connection = mysql.createPool({
-    host: '3.19.85.118',
-    user: 'COSC631',
-    password: 'COSC631',
-    database: 'searchEngine',
+    host: dbHost,
+    user: dbUser,
+    password: dbPassword,
+    database: dbName,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -52,19 +53,16 @@ const extractKeywordsAndDescription = (root) => {
             .forEach(word => keywords.add(word));
     };
 
-    // Extract meta keywords if available
     const metaKeywords = root.querySelector('meta[name="keywords"]');
     if (metaKeywords) {
         addKeywordsFromString(metaKeywords.getAttribute('content'));
     }
 
-    // Try to extract meta description first
     const metaDescription = root.querySelector('meta[name="description"]');
     if (metaDescription) {
         description = metaDescription.getAttribute('content').slice(0, 200);
     }
 
-    // Fallback to title if meta description is not found
     if (!description) {
         const titleTag = root.querySelector('title');
         if (titleTag) {
@@ -73,7 +71,6 @@ const extractKeywordsAndDescription = (root) => {
         }
     }
 
-    // Further fallback to headings (h1-h6)
     if (!description) {
         const headings = root.querySelectorAll('h1, h2, h3, h4, h5, h6');
         for (let heading of headings) {
@@ -84,7 +81,6 @@ const extractKeywordsAndDescription = (root) => {
         }
     }
 
-    // Finally, use the body text as a last resort
     if (!description) {
         const bodyText = root.querySelector('body')?.text || '';
         addKeywordsFromString(bodyText);
@@ -96,16 +92,14 @@ const extractKeywordsAndDescription = (root) => {
 
 // Function to solve CAPTCHA using 2Captcha
 const solveCaptchaWith2Captcha = async (captchaImage) => {
-    const apiKey = captchaApiKey;
     try {
-        const captchaId = await solveCaptcha(apiKey, {
+        const captchaId = await solveCaptcha(captchaApiKey, {
             method: 'post',
             body: captchaImage
         });
 
-        // Wait for the CAPTCHA solution to be ready
         const result = await waitForCaptchaSolution(captchaId);
-        return result.text; // Return the CAPTCHA solution
+        return result.text;
     } catch (error) {
         console.error('Error solving CAPTCHA:', error);
         throw error;
@@ -114,15 +108,14 @@ const solveCaptchaWith2Captcha = async (captchaImage) => {
 
 // Wait for the CAPTCHA solution to be ready
 const waitForCaptchaSolution = async (captchaId, pollingInterval = 5000) => {
-    const apiKey = captchaApiKey;
     let result;
 
     while (true) {
-        result = await checkCaptchaSolution(captchaId, apiKey); // Check CAPTCHA status
+        result = await checkCaptchaSolution(captchaId, captchaApiKey);
         if (result.status === 'ready') {
-            return result; // Return the result if solved
+            return result;
         }
-        await new Promise(resolve => setTimeout(resolve, pollingInterval)); // Wait before polling again
+        await new Promise(resolve => setTimeout(resolve, pollingInterval));
     }
 };
 
@@ -146,22 +139,21 @@ const checkCaptchaSolution = async (captchaId, apiKey) => {
 // Function to fetch HTML with Playwright (for JavaScript-heavy pages)
 const fetchHtmlWithPlaywright = async (url) => {
     try {
-        const browser = await chromium.launch({ headless: true }); // Launch Chromium browser
+        const browser = await chromium.launch({ headless: true });
         const page = await browser.newPage();
-        await page.goto(url, { waitUntil: 'networkidle' }); // Wait for page load
+        await page.goto(url, { waitUntil: 'networkidle' });
 
-        // Check for CAPTCHA
-        const captchaElement = await page.$('#captcha'); // Update the selector based on the site
+        const captchaElement = await page.$('#captcha');
         if (captchaElement) {
             const captchaImage = await captchaElement.screenshot();
             const captchaSolution = await solveCaptchaWith2Captcha(captchaImage);
-            await page.fill('#captchaInput', captchaSolution); // Update selector accordingly
-            await page.click('#submit'); // Update based on the site's form
-            await page.waitForNavigation(); // Wait for navigation after submitting CAPTCHA
+            await page.fill('#captchaInput', captchaSolution);
+            await page.click('#submit');
+            await page.waitForNavigation();
         }
 
-        const html = await page.content(); // Get HTML content of the page
-        await browser.close(); // Close browser
+        const html = await page.content();
+        await browser.close();
         return html;
     } catch (error) {
         console.error(`Error navigating to URL ${url}:`, error);
@@ -169,32 +161,25 @@ const fetchHtmlWithPlaywright = async (url) => {
     }
 };
 
-// Function to fetch HTML using Axios (for non-JavaScript heavy pages)
-const fetchHtmlWithAxios = async (url) => {
+// Function to fetch HTML using cloudscraper (for Cloudflare protected sites)
+const fetchHtmlWithCloudscraper = async (url) => {
     try {
-        const response = await axios.get(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive',
-            },
-        });
-        return response.data; // The HTML content
+        const html = await cloudscraper.get(url);
+        return html; // The HTML content
     } catch (error) {
-        console.error(`Error fetching URL ${url}:`, error);
+        console.error(`Error fetching URL with cloudscraper ${url}:`, error);
         return null;
     }
 };
 
-// Function to determine whether to use Playwright or Axios based on content
+// Function to fetch HTML using Playwright or cloudscraper based on site
 const fetchHtml = async (url) => {
     try {
-        const html = await fetchHtmlWithAxios(url); // Try with Axios first
+        const html = await fetchHtmlWithCloudscraper(url); // Try with cloudscraper first
         if (html) {
             return html;
         }
-        // If Axios fails, fall back to Playwright
+        // If cloudscraper fails, fall back to Playwright
         return await fetchHtmlWithPlaywright(url);
     } catch (error) {
         console.error(`Error fetching HTML from ${url}:`, error);

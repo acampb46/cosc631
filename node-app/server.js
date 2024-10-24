@@ -22,11 +22,17 @@ const options = {
     cert: fs.readFileSync('/etc/ssl/certs/gerardcosc631_chained.pem'),
 };
 
+require('dotenv').config();
+// Environment Variables
+const dbHost = process.env.DB_HOST;
+const dbUser = process.env.DB_USER;
+const dbPassword = process.env.DB_PASSWORD;
+
 // MySQL connection setup for parser db
 const db = mysql.createConnection({
-    host: '3.19.85.118',
-    user: 'COSC631',
-    password: 'COSC631',
+    host: dbHost,
+    user: dbUser,
+    password: dbPassword,
     database: 'htmlTags'
 });
 

@@ -193,6 +193,27 @@ const fetchHtml = async (url) => {
     }
 };
 
+// Function to get the highest current pos value
+const getNextPos = async () => {
+    try {
+        const [rows] = await connection.query('SELECT MAX(pos) AS maxPos FROM robotUrl');
+        return rows[0].maxPos ? rows[0].maxPos + 1 : 1; // If no rows exist, start from 1
+    } catch (error) {
+        console.error('Error fetching max pos:', error);
+    }
+};
+
+// Function to insert a new URL into the robotUrl table
+const insertUrlWithPos = async (url) => {
+    try {
+        const nextPos = await getNextPos(); // Get the next pos value
+        await connection.query('INSERT INTO robotUrl (url, pos) VALUES (?, ?)', [url, nextPos]);
+        console.log(`Inserted URL: ${url} with pos: ${nextPos}`);
+    } catch (error) {
+        console.error(`Error inserting URL ${url}:`, error);
+    }
+};
+
 // Function to crawl URLs from the database
 const crawlUrls = async () => {
     try {
@@ -236,7 +257,7 @@ const crawlUrls = async () => {
 
                     const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [host]);
                     if (countResults[0].count === 0) {
-                        await connection.query('INSERT INTO robotUrl (url) VALUES (?)', [host]);
+                        await insertUrlWithPos(host);
                         console.log(`Inserted new URL to crawl: ${host}`);
                     }
                 }

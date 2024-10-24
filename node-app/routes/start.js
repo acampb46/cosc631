@@ -108,18 +108,13 @@ const fetchHtml = async (url) => {
 // Function to fetch HTML using puppeteer
 const fetchHtmlWithPuppeteer = async (url) => {
     const browser = await puppeteer.launch({
-        headless: false, // Set to false if you want to see the browser; set to true for headless mode
-        defaultViewport: {
-            width: 1280, // Set width
-            height: 800, // Set height
-        },
+        headless: true, // Set to false if you want to see the browser; set to true for headless mode
         args: [
             '--no-sandbox', // Recommended for server environments
             '--disable-setuid-sandbox', // Recommended for server environments
             '--disable-web-security', // Disable web security for all pages
             '--disable-infobars', // Disables infobars
             '--disable-dev-shm-usage', // Overcome limited resource problems
-            '--window-size=1280,800', // Set window size
         ],
     });
 

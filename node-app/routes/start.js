@@ -143,16 +143,14 @@ const fetchHtmlWithPlaywright = async (url) => {
         const page = await browser.newPage();
         await page.goto(url, {waitUntil: 'networkidle'});
 
-        await page.waitForSelector('body:not(.loading)', {timeout: 60000});
-
-        const captchaElement = await page.$('#captcha');
-        if (captchaElement) {
-            const captchaImage = await captchaElement.screenshot();
-            const captchaSolution = await solveCaptchaWith2Captcha(captchaImage);
-            await page.fill('#captchaInput', captchaSolution);
-            await page.click('#submit');
-            await page.waitForNavigation();
-        }
+        // const captchaElement = await page.$('#captcha');
+        // if (captchaElement) {
+        //     const captchaImage = await captchaElement.screenshot();
+        //     const captchaSolution = await solveCaptchaWith2Captcha(captchaImage);
+        //     await page.fill('#captchaInput', captchaSolution);
+        //     await page.click('#submit');
+        //     await page.waitForNavigation();
+        // }
 
         const html = await page.content();
         await browser.close();

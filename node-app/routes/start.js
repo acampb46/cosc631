@@ -204,7 +204,8 @@ const crawlUrls = async () => {
 
                 // Insert keywords into the database
                 for (const keyword of keywords) {
-                    const rank = (html.match(new RegExp(keyword, 'gi')) || []).length;
+                    const escapedKeyword = keyword.replace(/[-\/\\^$.*+?()[\]{}|]/g, '\\$&'); // Escape any regex special characters
+                    const rank = (html.match(new RegExp(escapedKeyword, 'gi')) || []).length; // Count occurrences
                     await connection.query(
                         'INSERT INTO urlKeyword (url, keyword, `rank`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `rank` = ?',
                         [nextUrl, keyword, rank, rank]

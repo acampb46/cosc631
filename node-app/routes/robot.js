@@ -1,15 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2');
-const axios = require('axios'); // Use axios to fetch web pages
-const { parse } = require('node-html-parser'); // node-html-parser for HTML parsing
+const axios = require('axios');
+const { parse } = require('node-html-parser');
 
-// MySQL connection setup
-const connection = mysql.createConnection({
-    host: '3.19.85.118',
-    user: 'COSC631',
-    password: 'COSC631',
-    database: 'searchEngine'
+
+require('dotenv').config();
+// Environment Variables
+const dbHost = process.env.DB_HOST;
+const dbUser = process.env.DB_USER;
+const dbPassword = process.env.DB_PASSWORD;
+const dbName = process.env.DB_NAME;
+
+// MySQL connection pool
+const connection = mysql.createPool({
+    host: dbHost,
+    user: dbUser,
+    password: dbPassword,
+    database: dbName
 });
 
 connection.connect((err) => {
@@ -17,22 +25,30 @@ connection.connect((err) => {
     console.log('Connected to searchEngine database with robot.js');
 });
 
-
 // The /search route
 router.get('/search', (req, res) => {
     const { query, operation } = req.query;
-    
+
     if (!query) {
         return res.status(400).json({ error: 'No search query provided' });
     }
 
-    const keywords = query.split(' ').filter(word => word.length > 2); // Minimum length 3 chars
-    const operationType = operation === 'AND' ? 'AND' : 'OR'; // Default to OR
+    const keywords = query.split(' ').filter(word => word.length > 2);
+    const operationType = operation === 'AND' ? 'AND' : 'OR';
 
-    let sqlQuery = 'SELECT DISTINCT url FROM urlKeyword WHERE ';
-    const keywordConditions = keywords.map(keyword => `keyword LIKE '%${keyword}%'`).join(` ${operationType} `);
+    // Query to sum ranks, retrieve descriptions, and order by rank descending
+    let sqlQuery = `
+        SELECT u.url, d.description, SUM(k.rank) AS totalRank
+        FROM urlKeyword k
+        JOIN urlDescription d ON k.url = d.url
+        JOIN robotUrl u ON k.url = u.url
+        WHERE `;
 
-    sqlQuery += keywordConditions;
+    // Add conditions for keywords based on operation type
+    const keywordConditions = keywords.map(keyword => `k.keyword LIKE '%${keyword}%'`).join(` ${operationType} `);
+    sqlQuery += `${keywordConditions}
+        GROUP BY u.url
+        ORDER BY totalRank DESC`;
 
     connection.query(sqlQuery, (err, results) => {
         if (err) {
@@ -41,7 +57,11 @@ router.get('/search', (req, res) => {
         }
 
         if (results.length > 0) {
-            res.json({ urls: results.map(row => row.url) });
+            res.json(results.map(row => ({
+                url: row.url,
+                description: row.description,
+                rank: row.totalRank
+            })));
         } else {
             res.json({ message: 'No results found' });
         }

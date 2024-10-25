@@ -51,7 +51,6 @@ const extractKeywordsAndDescription = (root) => {
             /href=["'][^"']*["']/g, // Ignore href attributes
             /[^\w\s]/g, // Ignore non-word characters (punctuation, etc.)
             /(?:^| )\w{1,2}(?:$| )/g, // Ignore short words (1-2 letters)
-            /[A-Z0-9_]+/g // Ignore uppercase acronyms and IDs
         ];
 
         unwantedPatterns.forEach(pattern => {

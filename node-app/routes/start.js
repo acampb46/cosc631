@@ -107,30 +107,6 @@ const fetchHtmlWithPlaywright = async (url) => {
     }
 };
 
-// Function to fetch HTML with cloudscraper
-const fetchHtmlWithCloudscraper = async (url) => {
-    try {
-        const response = await cloudscraper.get(url, {
-            resolveWithFullResponse: true,
-            method: 'GET',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            },
-        });
-
-        if (response.statusCode === 403 || response.statusCode === 503 || response.body.includes('Just a moment...')) {
-            console.log('Cloudscraper has detected a CloudFlare challenge. Calling Playwright to solve it.');
-            return fetchHtmlWithPlaywright(url);
-        } else {
-            console.log(`Successfully retrieved HTML with Cloudscraper.`);
-            return response;
-        }
-    } catch (error) {
-        console.error(`Error fetching URL with cloudscraper ${url}`);
-        return null;
-    }
-};
-
 // Function to fetch HTML using Playwright or cloudscraper based on site
 const fetchHtml = async (url) => {
     try {
@@ -219,8 +195,6 @@ const crawlUrls = async () => {
                         if (countResults[0].count === 0) {
                             await insertUrlWithPos(host); // Insert the new URL
                             console.log(`Inserted new URL to crawl: ${host}`);
-                        } else {
-                            console.log(`URL already exists in database: ${host}`);
                         }
                     } catch (err) {
                         console.error(`Error processing link: ${link}`, err);

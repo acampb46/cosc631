@@ -176,7 +176,7 @@ const fetchHtmlWithCloudscraper = async (url) => {
             console.log('Cloudscraper has detected a CloudFlare challenge. Calling Playwright to solve it.');
             return null;
         } else {
-            console.log(`Successfully retrieved HTML with Cloudscraper: ${response}`);
+            console.log(`Successfully retrieved HTML with Cloudscraper: ${response.body}`);
             return response;
         }
     } catch (error) {

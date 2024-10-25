@@ -187,74 +187,85 @@ const insertUrlWithPos = async (url) => {
 // Function to crawl URLs from the database
 const crawlUrls = async () => {
     try {
-        const [results] = await connection.query('SELECT * FROM robotUrl ORDER BY pos');
-        console.log(`Fetched ${results.length} URLs from robotUrl`);
+        let continueCrawling = true;
 
-        for (let row of results) {
-            let nextUrl = row.url;
-            if (!nextUrl.startsWith('http://') && !nextUrl.startsWith('https://')) {
-                nextUrl = 'https://' + nextUrl; // Ensure the URL starts with a valid protocol
+        while (continueCrawling) {
+            const [results] = await connection.query('SELECT * FROM robotUrl ORDER BY pos');
+            console.log(`Fetched ${results.length} URLs from robotUrl`);
+
+            if (results.length === 0) {
+                console.log('No URLs to crawl. Stopping the crawl process.');
+                break; // Exit if there are no URLs to process
             }
 
-            console.log(`Preparing to crawl URL: ${nextUrl}`);
-
-            try {
-                console.log(`Crawling URL: ${nextUrl}`);
-                const html = await fetchHtml(nextUrl); // Fetch HTML content
-                if (!html) {
-                    console.log(`Skipping URL due to failed HTML fetch: ${nextUrl}`);
-                    continue; // Skip if fetching fails
+            for (let row of results) {
+                let nextUrl = row.url;
+                if (!nextUrl.startsWith('http://') && !nextUrl.startsWith('https://')) {
+                    nextUrl = 'https://' + nextUrl; // Ensure the URL starts with a valid protocol
                 }
 
-                console.log(`Successfully crawled: ${nextUrl}`);
-                const root = parse(html);
-                const {keywords, description} = extractKeywordsAndDescription(root);
+                console.log(`Preparing to crawl URL: ${nextUrl}`);
 
-                // Insert description into the database
-                await connection.query(
-                    'INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?',
-                    [nextUrl, description, description]
-                );
-                console.log(`Inserted description for URL: ${nextUrl}`);
-
-                // Insert keywords into the database
-                for (const keyword of keywords) {
-                    const escapedKeyword = keyword.replace(/[-\/\\^$.*+?()[\]{}|]/g, '\\$&'); // Escape any regex special characters
-                    const rank = (html.match(new RegExp(escapedKeyword, 'gi')) || []).length; // Count occurrences
-                    await connection.query(
-                        'INSERT INTO urlKeyword (url, keyword, `rank`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `rank` = ?',
-                        [nextUrl, keyword, rank, rank]
-                    );
-                    console.log(`Inserted keyword: ${keyword}, Rank: ${rank}`);
-                }
-
-                // Extract and insert new links into robotUrl
-                const links = root.querySelectorAll('a').map(link => link.getAttribute('href')).filter(href => href);
-                for (const link of links) {
-                    try {
-                        const absoluteUrl = new URL(link, nextUrl).href; // Resolve relative URLs
-                        const host = new URL(absoluteUrl).host;
-
-                        // Use the full URL, not just the host
-                        const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [host]);
-                        if (countResults[0].count === 0) {
-                            await insertUrlWithPos(host); // Insert the new URL
-                            console.log(`Inserted new URL to crawl: ${host}`);
-                        }
-                    } catch (err) {
-                        console.error(`Error processing link: ${link}`, err);
+                try {
+                    console.log(`Crawling URL: ${nextUrl}`);
+                    const html = await fetchHtml(nextUrl); // Fetch HTML content
+                    if (!html) {
+                        console.log(`Skipping URL due to failed HTML fetch: ${nextUrl}`);
+                        continue; // Skip if fetching fails
                     }
-                }
 
-                // Check if the number of entries in urlDescription is below the minimum threshold
-                const [count] = await connection.query('SELECT COUNT(*) AS count FROM urlDescription');
-                console.log(`Current urlDescription count: ${count[0].count}`);
-                if (count[0].count >= n) {
-                    console.log('urlDescription has reached 500 entries.');
-                    return;
+                    console.log(`Successfully crawled: ${nextUrl}`);
+                    const root = parse(html);
+                    const { keywords, description } = extractKeywordsAndDescription(root);
+
+                    // Insert description into the database
+                    await connection.query(
+                        'INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?',
+                        [nextUrl, description, description]
+                    );
+                    console.log(`Inserted description for URL: ${nextUrl}`);
+
+                    // Insert keywords into the database
+                    for (const keyword of keywords) {
+                        const escapedKeyword = keyword.replace(/[-\/\\^$.*+?()[\]{}|]/g, '\\$&'); // Escape any regex special characters
+                        const rank = (html.match(new RegExp(escapedKeyword, 'gi')) || []).length; // Count occurrences
+                        await connection.query(
+                            'INSERT INTO urlKeyword (url, keyword, `rank`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `rank` = ?',
+                            [nextUrl, keyword, rank, rank]
+                        );
+                        console.log(`Inserted keyword: ${keyword}, Rank: ${rank}`);
+                    }
+
+                    // Extract and insert new links into robotUrl
+                    const links = root.querySelectorAll('a').map(link => link.getAttribute('href')).filter(href => href);
+                    for (const link of links) {
+                        try {
+                            const absoluteUrl = new URL(link, nextUrl).href; // Resolve relative URLs
+                            const host = new URL(absoluteUrl).host;
+
+                            // Use the full URL, not just the host
+                            const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [absoluteUrl]);
+                            if (countResults[0].count === 0) {
+                                await insertUrlWithPos(absoluteUrl); // Insert the new URL
+                                console.log(`Inserted new URL to crawl: ${absoluteUrl}`);
+                            }
+                        } catch (err) {
+                            console.error(`Error processing link: ${link}`, err);
+                        }
+                    }
+
+                    // Check if the number of entries in urlDescription is below the minimum threshold
+                    const [count] = await connection.query('SELECT COUNT(*) AS count FROM urlDescription');
+                    console.log(`Current urlDescription count: ${count[0].count}`);
+                    if (count[0].count >= n) {
+                        console.log('urlDescription has reached 500 entries. Stopping the crawl process.');
+                        continueCrawling = false; // Stop crawling if the limit is reached
+                        break; // Break out of the for loop
+                    }
+
+                } catch (err) {
+                    console.error(`Error navigating to URL: ${nextUrl}`, err);
                 }
-            } catch (err) {
-                console.error(`Error navigating to URL: ${nextUrl}`, err);
             }
         }
     } catch (error) {

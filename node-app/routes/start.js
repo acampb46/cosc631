@@ -54,21 +54,21 @@ const extractKeywordsAndDescription = (root) => {
             .forEach(word => keywords.add(word));
     };
 
-    const metaKeywords = root.querySelector('meta[name="keywords"]');
-    if (metaKeywords) {
-        addKeywordsFromString(metaKeywords.getAttribute('content'));
-    }
-
-    const metaDescription = root.querySelector('meta[name="description"]');
+    // Check meta description tags
+    const metaDescription = root.querySelector('meta[name="description"]') || root.querySelector('meta[property="og:description"]');
     if (metaDescription) {
-        description = metaDescription.getAttribute('content').slice(0, 200);
+        description = metaDescription.getAttribute('content') || '';
+        description = description.slice(0, 200); // Limit to 200 characters
+        console.log('Meta description found:', description);
     }
 
+    // If no meta description is found, fall back to other elements
     if (!description) {
         const titleTag = root.querySelector('title');
         if (titleTag) {
             addKeywordsFromString(titleTag.text);
-            description = titleTag.text.slice(0, 200);
+            description = titleTag.text.slice(0, 200); // Limit to 200 characters
+            console.log('Fallback to title tag:', description);
         }
     }
 
@@ -77,7 +77,8 @@ const extractKeywordsAndDescription = (root) => {
         for (let heading of headings) {
             addKeywordsFromString(heading.text);
             if (!description) {
-                description = heading.text.slice(0, 200);
+                description = heading.text.slice(0, 200); // Limit to 200 characters
+                console.log('Fallback to headings:', description);
             }
         }
     }
@@ -85,7 +86,8 @@ const extractKeywordsAndDescription = (root) => {
     if (!description) {
         const bodyText = root.querySelector('body')?.text || '';
         addKeywordsFromString(bodyText);
-        description = bodyText.slice(0, 200);
+        description = bodyText.slice(0, 200); // Limit to 200 characters
+        console.log('Fallback to body text:', description);
     }
 
     return {keywords: Array.from(keywords).slice(0, k), description};
@@ -268,14 +270,15 @@ const crawlUrls = async () => {
                 for (const link of links) {
                     try {
                         const absoluteUrl = new URL(link, nextUrl).href; // Resolve relative URLs
+                        const host = new URL(absoluteUrl).host;
 
                         // Use the full URL, not just the host
-                        const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [absoluteUrl]);
+                        const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [host]);
                         if (countResults[0].count === 0) {
-                            await insertUrlWithPos(absoluteUrl); // Insert the new URL
-                            console.log(`Inserted new URL to crawl: ${absoluteUrl}`);
+                            await insertUrlWithPos(host); // Insert the new URL
+                            console.log(`Inserted new URL to crawl: ${host}`);
                         } else {
-                            console.log(`URL already exists in database: ${absoluteUrl}`);
+                            console.log(`URL already exists in database: ${host}`);
                         }
                     } catch (err) {
                         console.error(`Error processing link: ${link}`, err);

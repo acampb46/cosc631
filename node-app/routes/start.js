@@ -1,9 +1,7 @@
-const axios = require('axios');
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
 const {chromium} = require('playwright'); // Use Playwright
-const cloudscraper = require('cloudscraper'); // Use cloudscraper
 const {parse} = require('node-html-parser');
 
 require('dotenv').config();
@@ -96,7 +94,23 @@ const fetchHtmlWithPlaywright = async (url) => {
     try {
         const browser = await chromium.launch({headless: true});
         const page = await browser.newPage();
+
+        // Set custom headers
+        await page.setExtraHTTPHeaders({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9'
+        });
+
         await page.goto(url, {waitUntil: 'networkidle'}, {timeout: 0});
+
+        // Add a random delay of 1 to 5 seconds to simulate human behavior
+        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
+
+        // Scroll the page to load additional content
+        await page.evaluate(() => window.scrollBy(0, window.innerHeight));
+
+        // Add another random delay of 1 to 5 seconds
+        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
 
         const html = await page.content();
         await browser.close();

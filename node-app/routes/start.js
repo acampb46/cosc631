@@ -46,8 +46,7 @@ const extractKeywordsAndDescription = (root) => {
     let description = '';
 
     const addKeywordsFromString = (str) => {
-        const unwantedPatterns = [
-            /<[^>]+>/g,  // Ignore HTML tags
+        const unwantedPatterns = [/<[^>]+>/g,  // Ignore HTML tags
             /src=["'][^"']*["']/g, // Ignore src attributes
             /href=["'][^"']*["']/g, // Ignore href attributes
             /[^\w\s]/g, // Ignore non-word characters (punctuation, etc.)
@@ -112,7 +111,7 @@ const extractKeywordsAndDescription = (root) => {
     }
 
 
-    return { keywords: Array.from(keywords).slice(0, k), description };
+    return {keywords: Array.from(keywords).slice(0, k), description};
 };
 
 
@@ -131,7 +130,7 @@ const fetchHtmlWithPlaywright = async (url, retries = 3) => {
             'Accept-Language': 'en-US,en;q=0.9'
         });
 
-        await page.goto(url, {waitUntil: 'domcontentloaded',timeout: 0});
+        await page.goto(url, {waitUntil: 'domcontentloaded', timeout: 0});
 
         await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
 
@@ -216,23 +215,17 @@ const crawlUrls = async () => {
 
                     console.log(`Successfully crawled: ${nextUrl}`);
                     const root = parse(html);
-                    const { keywords, description } = extractKeywordsAndDescription(root);
+                    const {keywords, description} = extractKeywordsAndDescription(root);
 
                     // Insert description into the database
-                    await connection.query(
-                        'INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?',
-                        [nextUrl, description, description]
-                    );
+                    await connection.query('INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?', [nextUrl, description, description]);
                     console.log(`Inserted description for URL: ${nextUrl}`);
 
                     // Insert keywords into the database
                     for (const keyword of keywords) {
                         const escapedKeyword = keyword.replace(/[-\/\\^$.*+?()[\]{}|]/g, '\\$&'); // Escape any regex special characters
                         const rank = (html.match(new RegExp(escapedKeyword, 'gi')) || []).length; // Count occurrences
-                        await connection.query(
-                            'INSERT INTO urlKeyword (url, keyword, `rank`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `rank` = ?',
-                            [nextUrl, keyword, rank, rank]
-                        );
+                        await connection.query('INSERT INTO urlKeyword (url, keyword, `rank`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `rank` = ?', [nextUrl, keyword, rank, rank]);
                         console.log(`Inserted keyword: ${keyword}, Rank: ${rank}`);
                     }
 
@@ -243,11 +236,12 @@ const crawlUrls = async () => {
                             const absoluteUrl = new URL(link, nextUrl).href; // Resolve relative URLs
                             const host = new URL(absoluteUrl).host;
 
-                            // Use the full URL, not just the host
-                            const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [absoluteUrl]);
-                            if (countResults[0].count === 0) {
-                                await insertUrlWithPos(absoluteUrl); // Insert the new URL
-                                console.log(`Inserted new URL to crawl: ${absoluteUrl}`);
+                            if (host) {
+                                const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [host]);
+                                if (countResults[0].count === 0) {
+                                    await insertUrlWithPos(host); // Insert the new URL
+                                    console.log(`Inserted new URL to crawl: ${host}`);
+                                }
                             }
                         } catch (err) {
                             console.error(`Error processing link: ${link}`, err);

@@ -46,8 +46,20 @@ const extractKeywordsAndDescription = (root) => {
     let description = '';
 
     const addKeywordsFromString = (str) => {
+        const unwantedPatterns = [
+            /<[^>]+>/g,  // Ignore HTML tags
+            /src=["'][^"']*["']/g, // Ignore src attributes
+            /href=["'][^"']*["']/g, // Ignore href attributes
+            /[^\w\s]/g, // Ignore non-word characters (punctuation, etc.)
+            /(?:^| )\w{1,2}(?:$| )/g // Ignore short words (1-2 letters)
+        ];
+
+        unwantedPatterns.forEach(pattern => {
+            str = str.replace(pattern, ' ');
+        });
+
         str.split(/\s+/)
-            .filter(word => word.length >= 3)
+            .filter(word => word.length >= 3) // Ensure keyword is at least 3 characters
             .forEach(word => keywords.add(word));
     };
 
@@ -65,16 +77,6 @@ const extractKeywordsAndDescription = (root) => {
         keywordsContent = metaKeywords.getAttribute('content') || '';
         addKeywordsFromString(keywordsContent);
         console.log('Meta keywords found:', keywordsContent);
-    }
-
-    // If no meta description is found, try the body text first for keywords
-    const bodyText = root.querySelector('body')?.text || '';
-    if (bodyText) {
-        addKeywordsFromString(bodyText); // Extract keywords from body text
-        if (!description) {
-            description = bodyText.slice(0, 200); // Limit to 200 characters
-            console.log('Fallback to body text:', description);
-        }
     }
 
     // If no description has been set, fall back to the title tag
@@ -99,12 +101,25 @@ const extractKeywordsAndDescription = (root) => {
         }
     }
 
+    // If no meta description is found, try the body text first for keywords
+    const bodyText = root.querySelector('body')?.text || '';
+    if (bodyText) {
+        addKeywordsFromString(bodyText); // Extract keywords from body text
+        if (!description) {
+            description = bodyText.slice(0, 200); // Limit to 200 characters
+            console.log('Fallback to body text:', description);
+        }
+    }
+
+
     return { keywords: Array.from(keywords).slice(0, k), description };
 };
 
 
 // Function to fetch HTML with Playwright (for JavaScript-heavy pages)
-const fetchHtmlWithPlaywright = async (url) => {
+const fetchHtmlWithPlaywright = async (url, retries = 3) => {
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
     try {
         chromium.use(stealth);
         const browser = await chromium.launch({headless: true});
@@ -118,21 +133,21 @@ const fetchHtmlWithPlaywright = async (url) => {
 
         await page.goto(url, {waitUntil: 'domcontentloaded',timeout: 0});
 
-        // Add a random delay of 1 to 5 seconds to simulate human behavior
         await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
 
-        // Scroll the page to load additional content
-        await page.evaluate(() => window.scrollBy(0, window.innerHeight));
-
-        // Add another random delay of 1 to 5 seconds
-        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
 
         const html = await page.content();
         await browser.close();
         return html;
     } catch (error) {
         console.error(`Error navigating to URL with Playwright ${url}:`, error);
-        return null;
+
+        // Check if it's a verification error and if there are retries left
+        if (retries > 0) {
+            console.log(`Waiting for 10 seconds before retrying...`);
+            await sleep(10000); // 10-second wait
+            return fetchData(url, retries - 1); // Retry fetching data
+        }
     }
 };
 

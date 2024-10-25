@@ -189,12 +189,20 @@ const insertUrlWithPos = async (url) => {
 // Function to update whether a url has been crawled to prevent it from being crawled multiple times
 const updateCrawledStatus = async (url) => {
     try {
-        await connection.query('UPDATE robotUrl SET crawled = "yes" WHERE url = ?', [url]);
-        console.log(`URL ${url} marked as crawled.`);
+        const [result] = await connection.execute(
+            'UPDATE robotUrl SET crawled = "yes" WHERE url = ?',
+            [url]
+        );
+        if (result.affectedRows > 0) {
+            console.log(`URL ${url} marked as crawled.`);
+        } else {
+            console.log(`No matching URL found for ${url}.`);
+        }
     } catch (err) {
         console.error('Error updating crawled status:', err);
     }
 };
+
 
 // Function to crawl URLs from the database
 const crawlUrls = async () => {

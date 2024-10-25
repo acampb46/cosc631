@@ -229,7 +229,7 @@ const crawlUrls = async () => {
         for (let row of results) {
             let nextUrl = row.url;
             if (!nextUrl.startsWith('http://') && !nextUrl.startsWith('https://')) {
-                nextUrl = 'https://' + nextUrl;
+                nextUrl = 'https://' + nextUrl; // Ensure the URL starts with a valid protocol
             }
 
             console.log(`Preparing to crawl URL: ${nextUrl}`);
@@ -238,20 +238,28 @@ const crawlUrls = async () => {
                 console.log(`Crawling URL: ${nextUrl}`);
                 const html = await fetchHtml(nextUrl); // Fetch HTML content
                 if (!html) {
+                    console.log(`Skipping URL due to failed HTML fetch: ${nextUrl}`);
                     continue; // Skip if fetching fails
                 }
+
                 console.log(`Successfully crawled: ${nextUrl}`);
                 const root = parse(html);
                 const {keywords, description} = extractKeywordsAndDescription(root);
 
                 // Insert description into the database
-                await connection.query('INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?', [nextUrl, description, description]);
+                await connection.query(
+                    'INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?',
+                    [nextUrl, description, description]
+                );
                 console.log(`Inserted description for URL: ${nextUrl}`);
 
                 // Insert keywords into the database
                 for (const keyword of keywords) {
                     const rank = (html.match(new RegExp(keyword, 'gi')) || []).length;
-                    await connection.query('INSERT INTO urlKeyword (url, keyword, `rank`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `rank` = ?', [nextUrl, keyword, rank, rank]);
+                    await connection.query(
+                        'INSERT INTO urlKeyword (url, keyword, `rank`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `rank` = ?',
+                        [nextUrl, keyword, rank, rank]
+                    );
                     console.log(`Inserted keyword: ${keyword}, Rank: ${rank}`);
                 }
 
@@ -260,12 +268,14 @@ const crawlUrls = async () => {
                 for (const link of links) {
                     try {
                         const absoluteUrl = new URL(link, nextUrl).href; // Resolve relative URLs
-                        const host = new URL(absoluteUrl).host;
 
-                        const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [host]);
+                        // Use the full URL, not just the host
+                        const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [absoluteUrl]);
                         if (countResults[0].count === 0) {
-                            await insertUrlWithPos(host); // Insert the new URL
-                            console.log(`Inserted new URL to crawl: ${host}`);
+                            await insertUrlWithPos(absoluteUrl); // Insert the new URL
+                            console.log(`Inserted new URL to crawl: ${absoluteUrl}`);
+                        } else {
+                            console.log(`URL already exists in database: ${absoluteUrl}`);
                         }
                     } catch (err) {
                         console.error(`Error processing link: ${link}`, err);

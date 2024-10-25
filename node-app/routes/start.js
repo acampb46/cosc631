@@ -62,9 +62,9 @@ const extractKeywordsAndDescription = (root) => {
     // Check meta keyword tag
     const metaKeywords = root.querySelector('meta[name="keyword"]') || root.querySelector('meta[name="keywords"]');
     if (metaKeywords) {
-        keywords = metaDescription.getAttribute('content') || '';
-        addKeywordsFromString(keywords);
-        console.log('Meta keywords found:', keywords);
+        keywordsContent = metaKeywords.getAttribute('content') || '';
+        addKeywordsFromString(keywordsContent);
+        console.log('Meta keywords found:', keywordsContent);
     }
 
     // If no meta description is found, try the body text first for keywords

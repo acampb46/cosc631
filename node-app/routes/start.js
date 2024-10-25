@@ -50,7 +50,8 @@ const extractKeywordsAndDescription = (root) => {
             /src=["'][^"']*["']/g, // Ignore src attributes
             /href=["'][^"']*["']/g, // Ignore href attributes
             /[^\w\s]/g, // Ignore non-word characters (punctuation, etc.)
-            /(?:^| )\w{1,2}(?:$| )/g // Ignore short words (1-2 letters)
+            /(?:^| )\w{1,2}(?:$| )/g, // Ignore short words (1-2 letters)
+            /[A-Z0-9_]+/g // Ignore uppercase acronyms and IDs
         ];
 
         unwantedPatterns.forEach(pattern => {
@@ -66,6 +67,7 @@ const extractKeywordsAndDescription = (root) => {
     const metaDescription = root.querySelector('meta[name="description"]') || root.querySelector('meta[property="og:description"]');
     if (metaDescription) {
         description = metaDescription.getAttribute('content') || '';
+        addKeywordsFromString(description);
         description = description.slice(0, 200); // Limit to 200 characters
         console.log('Meta description found:', description);
     }
@@ -103,13 +105,11 @@ const extractKeywordsAndDescription = (root) => {
     // If no meta description is found, try the body text first for keywords
     const bodyText = root.querySelector('body')?.text || '';
     if (bodyText) {
-        addKeywordsFromString(bodyText); // Extract keywords from body text
         if (!description) {
             description = bodyText.slice(0, 200); // Limit to 200 characters
             console.log('Fallback to body text:', description);
         }
     }
-
 
     return {keywords: Array.from(keywords).slice(0, k), description};
 };
@@ -145,7 +145,7 @@ const fetchHtmlWithPlaywright = async (url, retries = 3) => {
         if (retries > 0) {
             console.log(`Waiting for 10 seconds before retrying...`);
             await sleep(10000); // 10-second wait
-            return fetchData(url, retries - 1); // Retry fetching data
+            return fetchHtmlWithPlaywright(url, retries - 1); // Retry fetching data
         }
     }
 };

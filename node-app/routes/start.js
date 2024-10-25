@@ -206,6 +206,8 @@ const crawlUrls = async () => {
                 if (count[0].count >= n) {
                     console.log('urlDescription has reached 500 entries.');
                     break;
+                } else {
+                    await crawlUrls();
                 }
             } catch (err) {
                 console.error(`Error navigating to URL: ${nextUrl}`, err);

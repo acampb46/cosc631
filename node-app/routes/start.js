@@ -129,11 +129,16 @@ const fetchHtmlWithPlaywright = async (url, retries = 3) => {
             'Accept-Language': 'en-US,en;q=0.9'
         });
 
-        await page.goto(url, {waitUntil: 'domcontentloaded', timeout: 0});
+        await page.goto(url, { waitUntil: 'domcontentloaded' }); // Wait for page load
 
-        await sleep(10000); // 10-second wait
-
-        const html = await page.content();
+        // Add another random delay of 1 to 5 seconds
+        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
+        // Scroll the page to load additional content
+        await page.evaluate(() => window.scrollBy(0, window.innerHeight));
+        // Add another random delay of 1 to 5 seconds
+        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
+        
+        const html = await page.content(); // Get HTML content of the page
         await browser.close();
         return html;
     } catch (error) {

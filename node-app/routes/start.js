@@ -203,6 +203,7 @@ const crawlUrls = async () => {
 
                 // Check if the number of entries in urlDescription is below the minimum threshold
                 const [count] = await connection.query('SELECT COUNT(*) AS count FROM urlDescription');
+                console.log(`Current urlDescription count: ${count[0].count}`);
                 if (count[0].count >= n) {
                     console.log('urlDescription has reached 500 entries.');
                     return;

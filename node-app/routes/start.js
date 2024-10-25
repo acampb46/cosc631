@@ -172,14 +172,15 @@ const fetchHtmlWithCloudscraper = async (url) => {
             },
         });
 
-        if (response.statusCode === '403' || response.statusCode === '503' || response.body.includes('Just a moment...')) {
+        if (response.statusCode === 403 || response.statusCode === 503 || response.body.includes('Just a moment...')) {
             console.log('Cloudscraper has detected a CloudFlare challenge. Calling Playwright to solve it.');
             return null;
         } else {
+            console.log(`Successfully retrieved HTML with Cloudscraper: ${response}`);
             return response;
         }
     } catch (error) {
-        console.error(`Error fetching URL with cloudscraper ${url}:`, error);
+        console.error(`Error fetching URL with cloudscraper ${url}`);
         return null;
     }
 };

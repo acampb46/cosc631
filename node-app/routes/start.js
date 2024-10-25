@@ -1,3 +1,4 @@
+const axios = require('axios');
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
@@ -164,18 +165,20 @@ const fetchHtmlWithPlaywright = async (url) => {
 const fetchHtmlWithCloudscraper = async (url) => {
     try {
         const response = await cloudscraper.get(url, {
-            // Wait for the content to be fully loaded
-            resolveWithFullResponse: true,
-            method: 'GET',
-            headers: {
+            resolveWithFullResponse: true, method: 'GET', headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             },
         });
 
-        return response;
+        if (response.statusCode === '403' || response.statusCode === '503' || response.body.includes('Just a moment...')) {
+            console.log('Cloudscraper has detected a CloudFlare challenge. Calling Playwright to solve it.');
+            return null;
+        } else {
+            return response;
+        }
     } catch (error) {
         console.error(`Error fetching URL with cloudscraper ${url}:`, error);
-        return null; // Error, return null
+        return null;
     }
 };
 

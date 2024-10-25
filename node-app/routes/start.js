@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
-const {chromium} = require('playwright'); // Use Playwright
+const {chromium} = require('playwright-extra');
+const stealth = require("puppeteer-extra-plugin-stealth")();
 const {parse} = require('node-html-parser');
 
 require('dotenv').config();
@@ -50,7 +51,7 @@ const extractKeywordsAndDescription = (root) => {
             .forEach(word => keywords.add(word));
     };
 
-    // Check meta description tags
+    // Check meta description tags first
     const metaDescription = root.querySelector('meta[name="description"]') || root.querySelector('meta[property="og:description"]');
     if (metaDescription) {
         description = metaDescription.getAttribute('content') || '';
@@ -58,7 +59,25 @@ const extractKeywordsAndDescription = (root) => {
         console.log('Meta description found:', description);
     }
 
-    // If no meta description is found, fall back to other elements
+    // Check meta keyword tag
+    const metaKeywords = root.querySelector('meta[name="keyword"]') || root.querySelector('meta[name="keywords"]');
+    if (metaKeyords) {
+        keywords = metaDescription.getAttribute('content') || '';
+        addKeywordsFromString(keywords);
+        console.log('Meta keywords found:', keywords);
+    }
+
+    // If no meta description is found, try the body text first for keywords
+    const bodyText = root.querySelector('body')?.text || '';
+    if (bodyText) {
+        addKeywordsFromString(bodyText); // Extract keywords from body text
+        if (!description) {
+            description = bodyText.slice(0, 200); // Limit to 200 characters
+            console.log('Fallback to body text:', description);
+        }
+    }
+
+    // If no description has been set, fall back to the title tag
     if (!description) {
         const titleTag = root.querySelector('title');
         if (titleTag) {
@@ -68,6 +87,7 @@ const extractKeywordsAndDescription = (root) => {
         }
     }
 
+    // If still no description, check headings
     if (!description) {
         const headings = root.querySelectorAll('h1, h2, h3, h4, h5, h6');
         for (let heading of headings) {
@@ -79,19 +99,14 @@ const extractKeywordsAndDescription = (root) => {
         }
     }
 
-    if (!description) {
-        const bodyText = root.querySelector('body')?.text || '';
-        addKeywordsFromString(bodyText);
-        description = bodyText.slice(0, 200); // Limit to 200 characters
-        console.log('Fallback to body text:', description);
-    }
-
-    return {keywords: Array.from(keywords).slice(0, k), description};
+    return { keywords: Array.from(keywords).slice(0, k), description };
 };
+
 
 // Function to fetch HTML with Playwright (for JavaScript-heavy pages)
 const fetchHtmlWithPlaywright = async (url) => {
     try {
+        chromium.use(stealth);
         const browser = await chromium.launch({headless: true});
         const page = await browser.newPage();
 
@@ -101,7 +116,7 @@ const fetchHtmlWithPlaywright = async (url) => {
             'Accept-Language': 'en-US,en;q=0.9'
         });
 
-        await page.goto(url, {waitUntil: 'networkidle'}, {timeout: 0});
+        await page.goto(url, {waitUntil: 'domcontentloaded',timeout: 0});
 
         // Add a random delay of 1 to 5 seconds to simulate human behavior
         await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));

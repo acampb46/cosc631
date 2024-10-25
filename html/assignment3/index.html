@@ -30,7 +30,7 @@
         const query = document.getElementById('searchQuery').value;
         const operation = document.querySelector('input[name="operation"]:checked').value;
 
-        const response = await fetch(`/search?query=${encodeURIComponent(query)}&operation=${operation}`);
+        const response = await fetch(`https://gerardcosc631.com:12348/search?query=${encodeURIComponent(query)}&operation=${operation}`);
         const results = await response.json();
 
         const resultsList = document.getElementById('resultsList');

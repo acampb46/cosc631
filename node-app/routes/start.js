@@ -74,7 +74,7 @@ const extractKeywordsAndDescription = (root) => {
     // Check meta keyword tag
     const metaKeywords = root.querySelector('meta[name="keyword"]') || root.querySelector('meta[name="keywords"]');
     if (metaKeywords) {
-        keywordsContent = metaKeywords.getAttribute('content') || '';
+        let keywordsContent = metaKeywords.getAttribute('content') || '';
         addKeywordsFromString(keywordsContent);
         console.log('Meta keywords found:', keywordsContent);
     }
@@ -186,13 +186,23 @@ const insertUrlWithPos = async (url) => {
     }
 };
 
+// Function to update whether a url has been crawled to prevent it from being crawled multiple times
+const updateCrawledStatus = async (url) => {
+    try {
+        await connection.query('UPDATE robotUrl SET crawled = "yes" WHERE url = ?', [url]);
+        console.log(`URL ${url} marked as crawled.`);
+    } catch (err) {
+        console.error('Error updating crawled status:', err);
+    }
+};
+
 // Function to crawl URLs from the database
 const crawlUrls = async () => {
     try {
         let continueCrawling = true;
 
         while (continueCrawling) {
-            const [results] = await connection.query('SELECT * FROM robotUrl ORDER BY pos');
+            const [results] = await connection.query('SELECT * FROM robotUrl WHERE crawled = "no" ORDER BY pos');
             console.log(`Fetched ${results.length} URLs from robotUrl`);
 
             if (results.length === 0) {
@@ -210,6 +220,7 @@ const crawlUrls = async () => {
 
                 try {
                     console.log(`Crawling URL: ${nextUrl}`);
+                    updateCrawledStatus(nextUrl);
                     const html = await fetchHtml(nextUrl); // Fetch HTML content
                     if (!html) {
                         console.log(`Skipping URL due to failed HTML fetch: ${nextUrl}`);

@@ -131,8 +131,7 @@ const fetchHtmlWithPlaywright = async (url, retries = 3) => {
 
         await page.goto(url, {waitUntil: 'domcontentloaded', timeout: 0});
 
-        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
-
+        await sleep(10000); // 10-second wait
 
         const html = await page.content();
         await browser.close();

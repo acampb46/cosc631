@@ -4,7 +4,6 @@ const router = express.Router();
 const mysql = require('mysql2/promise');
 const {chromium} = require('playwright'); // Use Playwright
 const cloudscraper = require('cloudscraper'); // Use cloudscraper
-const {solveCaptcha} = require('2captcha'); // Use for solving CAPTCHA
 const {parse} = require('node-html-parser');
 
 require('dotenv').config();
@@ -13,7 +12,6 @@ const dbHost = process.env.DB_HOST;
 const dbUser = process.env.DB_USER;
 const dbPassword = process.env.DB_PASSWORD;
 const dbName = process.env.DB_NAME;
-const captchaApiKey = process.env.CAPTCHA_API_KEY;
 
 // Constants
 const k = 10; // Number of keywords to extract
@@ -93,64 +91,12 @@ const extractKeywordsAndDescription = (root) => {
     return {keywords: Array.from(keywords).slice(0, k), description};
 };
 
-// Function to solve CAPTCHA using 2Captcha
-const solveCaptchaWith2Captcha = async (captchaImage) => {
-    try {
-        const captchaId = await solveCaptcha(captchaApiKey, {
-            method: 'post', body: captchaImage
-        });
-
-        const result = await waitForCaptchaSolution(captchaId);
-        return result.text;
-    } catch (error) {
-        console.error('Error solving CAPTCHA:', error);
-        throw error;
-    }
-};
-
-// Wait for the CAPTCHA solution to be ready
-const waitForCaptchaSolution = async (captchaId, pollingInterval = 5000) => {
-    let result;
-
-    while (true) {
-        result = await checkCaptchaSolution(captchaId, captchaApiKey);
-        if (result.status === 'ready') {
-            return result;
-        }
-        await new Promise(resolve => setTimeout(resolve, pollingInterval));
-    }
-};
-
-// Function to check the CAPTCHA solution
-const checkCaptchaSolution = async (captchaId, apiKey) => {
-    try {
-        const response = await axios.get(`https://2captcha.com/res.php`, {
-            params: {
-                key: apiKey, action: 'get', id: captchaId,
-            },
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Error checking CAPTCHA solution:', error);
-        return {status: 'error', request: captchaId};
-    }
-};
-
 // Function to fetch HTML with Playwright (for JavaScript-heavy pages)
 const fetchHtmlWithPlaywright = async (url) => {
     try {
         const browser = await chromium.launch({headless: true});
         const page = await browser.newPage();
-        await page.goto(url, {waitUntil: 'networkidle'});
-
-        // const captchaElement = await page.$('#captcha');
-        // if (captchaElement) {
-        //     const captchaImage = await captchaElement.screenshot();
-        //     const captchaSolution = await solveCaptchaWith2Captcha(captchaImage);
-        //     await page.fill('#captchaInput', captchaSolution);
-        //     await page.click('#submit');
-        //     await page.waitForNavigation();
-        // }
+        await page.goto(url, {waitUntil: 'networkidle'}, {timeout: 0});
 
         const html = await page.content();
         await browser.close();
@@ -174,9 +120,9 @@ const fetchHtmlWithCloudscraper = async (url) => {
 
         if (response.statusCode === 403 || response.statusCode === 503 || response.body.includes('Just a moment...')) {
             console.log('Cloudscraper has detected a CloudFlare challenge. Calling Playwright to solve it.');
-            return null;
+            return fetchHtmlWithPlaywright(url);
         } else {
-            console.log(`Successfully retrieved HTML with Cloudscraper: ${response.body}`);
+            console.log(`Successfully retrieved HTML with Cloudscraper.`);
             return response;
         }
     } catch (error) {
@@ -188,12 +134,10 @@ const fetchHtmlWithCloudscraper = async (url) => {
 // Function to fetch HTML using Playwright or cloudscraper based on site
 const fetchHtml = async (url) => {
     try {
-        const html = await fetchHtmlWithCloudscraper(url); // Try with cloudscraper first
+        const html = await fetchHtmlWithPlaywright(url);
         if (html) {
             return html;
         }
-        // If cloudscraper fails, fall back to Playwright
-        return await fetchHtmlWithPlaywright(url);
     } catch (error) {
         console.error(`Error fetching HTML from ${url}:`, error);
     }

@@ -165,7 +165,9 @@ const fetchHtmlWithPlaywright = async (url) => {
 const fetchHtmlWithCloudscraper = async (url) => {
     try {
         const response = await cloudscraper.get(url, {
-            resolveWithFullResponse: true, method: 'GET', headers: {
+            resolveWithFullResponse: true,
+            method: 'GET',
+            headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             },
         });
@@ -210,7 +212,7 @@ const getNextPos = async () => {
 const insertUrlWithPos = async (url) => {
     try {
         const nextPos = await getNextPos(); // Get the next pos value
-        await connection.query('INSERT INTO robotUrl (url, pos) VALUES (?, ?)', [url, nextPos]);
+        await connection.query('INSERT INTO robotUrl (url, pos) VALUES (?, ?) ON DUPLICATE KEY UPDATE url = url', [url, nextPos]); // Avoid duplication with 'ON DUPLICATE KEY'
         console.log(`Inserted URL: ${url} with pos: ${nextPos}`);
     } catch (error) {
         console.error(`Error inserting URL ${url}:`, error);
@@ -237,7 +239,7 @@ const crawlUrls = async () => {
                 if (!html) {
                     continue; // Skip if fetching fails
                 }
-
+                console.log(`Successfully crawled: ${nextUrl}`);
                 const root = parse(html);
                 const {keywords, description} = extractKeywordsAndDescription(root);
 
@@ -255,13 +257,17 @@ const crawlUrls = async () => {
                 // Extract and insert new links into robotUrl
                 const links = root.querySelectorAll('a').map(link => link.getAttribute('href')).filter(href => href);
                 for (const link of links) {
-                    const absoluteUrl = new URL(link, nextUrl).href;
-                    const host = new URL(absoluteUrl).host;
+                    try {
+                        const absoluteUrl = new URL(link, nextUrl).href; // Resolve relative URLs
+                        const host = new URL(absoluteUrl).host;
 
-                    const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [host]);
-                    if (countResults[0].count === 0) {
-                        await insertUrlWithPos(host);
-                        console.log(`Inserted new URL to crawl: ${host}`);
+                        const [countResults] = await connection.query('SELECT COUNT(*) AS count FROM robotUrl WHERE url = ?', [host]);
+                        if (countResults[0].count === 0) {
+                            await insertUrlWithPos(host); // Insert the new URL
+                            console.log(`Inserted new URL to crawl: ${host}`);
+                        }
+                    } catch (err) {
+                        console.error(`Error processing link: ${link}`, err);
                     }
                 }
 

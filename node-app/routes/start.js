@@ -14,7 +14,7 @@ const dbName = process.env.DB_NAME;
 
 // Constants
 const k = 10; // Number of keywords to extract
-const n = 500; // Minimum number of entries in urlDescription
+const n = 200; // Minimum number of entries in urlDescription
 
 // MySQL connection pool
 const connection = mysql.createPool({
@@ -266,7 +266,7 @@ const crawlUrls = async () => {
                     const [count] = await connection.query('SELECT COUNT(*) AS count FROM urlDescription');
                     console.log(`Current urlDescription count: ${count[0].count}`);
                     if (count[0].count >= n) {
-                        console.log('urlDescription has reached 500 entries. Stopping the crawl process.');
+                        console.log('urlDescription has reached 200 entries. Stopping the crawl process.');
                         continueCrawling = false; // Stop crawling if the limit is reached
                         break; // Break out of the for loop
                     }

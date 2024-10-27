@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
 const axios = require('axios');
+const {chromium} = require('playwright-extra');
+const stealth = require("puppeteer-extra-plugin-stealth")();
 
 require('dotenv').config();
 // Environment Variables
@@ -36,6 +38,45 @@ function countOccurrences(content, searchTerms) {
     return rank;
 }
 
+// Function to fetch HTML with Playwright (for JavaScript-heavy pages)
+const fetchHtmlWithPlaywright = async (url, retries = 3) => {
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    try {
+        chromium.use(stealth);
+        const browser = await chromium.launch({headless: true});
+        const page = await browser.newPage();
+
+        // Set custom headers
+        await page.setExtraHTTPHeaders({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9'
+        });
+
+        await page.goto(url, { waitUntil: 'domcontentloaded' }); // Wait for page load
+
+        // Add another random delay of 1 to 5 seconds
+        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
+        // Scroll the page to load additional content
+        await page.evaluate(() => window.scrollBy(0, window.innerHeight));
+        // Add another random delay of 1 to 5 seconds
+        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
+
+        const content = await page.content(); // Get HTML content of the page
+        await browser.close();
+        return content;
+    } catch (error) {
+        console.error(`Error navigating to URL with Playwright ${url}:`, error);
+
+        // Check if it's a verification error and if there are retries left
+        if (retries > 0) {
+            console.log(`Waiting for 10 seconds before retrying...`);
+            await sleep(10000); // 10-second wait
+            return fetchHtmlWithPlaywright(url, retries - 1); // Retry fetching data
+        }
+    }
+};
+
 // Search route
 router.get("/search", async (req, res) => {
     const {query, operator} = req.query; // Access query parameters
@@ -62,7 +103,7 @@ router.get("/search", async (req, res) => {
         // Real-time rank calculation
         const results = await Promise.all(rows.map(async ({url, description}) => {
             try {
-                const response = await axios.get(url);
+                const response = await fetchHtmlWithPlaywright(url);
                 const content = response.data; // HTML content as text
 
                 let rank = 0;

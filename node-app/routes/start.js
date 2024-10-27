@@ -66,7 +66,6 @@ const extractKeywordsAndDescription = (root) => {
     const metaDescription = root.querySelector('meta[name="description"]') || root.querySelector('meta[property="og:description"]');
     if (metaDescription) {
         description = metaDescription.getAttribute('content') || '';
-        addKeywordsFromString(description);
         description = description.slice(0, 200); // Limit to 200 characters
         console.log('Meta description found:', description);
     }
@@ -110,6 +109,10 @@ const extractKeywordsAndDescription = (root) => {
         }
     }
 
+    if(description) {
+        addKeywordsFromString(description);
+    }
+    
     return {keywords: Array.from(keywords).slice(0, k), description};
 };
 
@@ -189,14 +192,15 @@ const insertUrlWithPos = async (url) => {
 // Function to update whether a url has been crawled to prevent it from being crawled multiple times
 const updateCrawledStatus = async (url) => {
     try {
+        const hostUrl = new URL(url).host;
         const [result] = await connection.execute(
             'UPDATE robotUrl SET crawled = "yes" WHERE url = ?',
-            [url]
+            [hostUrl]
         );
         if (result.affectedRows > 0) {
-            console.log(`URL ${url} marked as crawled.`);
+            console.log(`URL ${hostUrl} marked as crawled.`);
         } else {
-            console.log(`No matching URL found for ${url}.`);
+            console.log(`No matching URL found for ${hostUrl}.`);
         }
     } catch (err) {
         console.error('Error updating crawled status:', err);

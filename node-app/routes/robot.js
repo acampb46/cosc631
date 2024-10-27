@@ -35,7 +35,7 @@ function countOccurrences(content, searchTerms) {
 }
 
 // Search route
-router.post("/search", async (req, res) => {
+router.get("/search", async (req, res) => {
     const { query, operator } = req.body;
     const isAndOperation = operator === "AND";
 

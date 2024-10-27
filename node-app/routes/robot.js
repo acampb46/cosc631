@@ -35,19 +35,23 @@ function countOccurrences(content, searchTerms) {
 }
 
 // Search route
-router.get("/search", async (req, res) => {
-    const { query, operator } = req.body;
+app.get("/search", async (req, res) => {
+    const { query, operator } = req.query; // Access query parameters
     const isAndOperation = operator === "AND";
+
+    if (!query) {
+        return res.status(400).json({ error: 'Query parameter is required.' });
+    }
 
     // Extract keywords and phrases
     const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
     const keywords = searchTerms.map(term => term.replace(/['"]+/g, ''));
 
-    // Initial search in urlKeyword table with case-insensitive LIKE using LOWER
-    const placeholders = keywords.map(() => "LOWER(keyword) LIKE ?").join(isAndOperation ? " AND " : " OR ");
-    const values = keywords.map(term => `%${term.toLowerCase()}%`);
+    // Initial search in urlKeyword table
+    const placeholders = keywords.map(() => "keyword LIKE ?").join(isAndOperation ? " AND " : " OR ");
+    const values = keywords.map(term => `%${term}%`);
 
-    const [rows] = await connection.promise().query(
+    const [rows] = await connection.query(
         `SELECT urlKeyword.url, urlDescription.description 
          FROM urlKeyword 
          JOIN urlDescription ON urlDescription.url = urlKeyword.url 
@@ -64,7 +68,7 @@ router.get("/search", async (req, res) => {
 
                 let rank = 0;
                 if (isAndOperation) {
-                    if (keywords.every(term => content.toLowerCase().includes(term.toLowerCase()))) {
+                    if (keywords.every(term => content.includes(term))) {
                         rank = countOccurrences(content, keywords);
                     }
                 } else {
@@ -85,7 +89,7 @@ router.get("/search", async (req, res) => {
     // Respond with formatted results
     res.json({
         query,
-        results: sortedResults
+        urls: sortedResults // Ensure this is the structure you expect in your client-side code
     });
 });
 

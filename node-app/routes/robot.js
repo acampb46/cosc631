@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 const axios = require('axios');
 
 require('dotenv').config();
@@ -11,7 +11,7 @@ const dbPassword = process.env.DB_PASSWORD;
 const dbName = process.env.DB_NAME;
 
 // MySQL connection setup
-const connection = mysql.createConnection({
+const connection = await mysql.createConnection({
     host: dbHost,
     user: dbUser,
     password: dbPassword,

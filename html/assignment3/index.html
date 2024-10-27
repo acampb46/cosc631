@@ -5,34 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custom Search Engine</title>
     <link rel="stylesheet" href="../assignment1/style.css">
-    <style>
-        /* Table styling for Excel-like layout */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
-        h1, h2 {
-            text-align: center;
-        }
-        .no-results {
-            text-align: center;
-            color: #555;
-        }
-    </style>
 </head>
 <body>
     <h1>Custom Search Engine</h1>
-    
+
     <form id="searchForm">
         <input type="text" id="searchQuery" placeholder="Enter keywords or phrases..." required>
         <label>
@@ -60,7 +36,7 @@
         document.getElementById('searchForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
-            const query = document.getElementById('searchQuery').value;
+            const query = encodeURIComponent(document.getElementById('searchQuery').value);
             const operation = document.querySelector('input[name="operation"]:checked').value;
 
             const response = await fetch(`https://gerardcosc631.com:12348/search?query=${query}&operation=${operation}`);
@@ -79,7 +55,7 @@
                     urlLink.target = "_blank";
                     urlLink.textContent = result.url;
                     urlCell.appendChild(urlLink);
-                    
+
                     const descriptionCell = document.createElement('td');
                     descriptionCell.textContent = result.description;
 

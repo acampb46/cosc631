@@ -3,8 +3,8 @@ const router = express.Router();
 const mysql = require('mysql2/promise');
 const { chromium } = require('playwright-extra');
 const stealth = require("puppeteer-extra-plugin-stealth")();
-
 require('dotenv').config();
+
 // Environment Variables
 const dbHost = process.env.DB_HOST;
 const dbUser = process.env.DB_USER;
@@ -14,25 +14,10 @@ const dbName = process.env.DB_NAME;
 let connection;
 let browser;
 
-// Async function to import p-limit
-let pLimit;
 (async () => {
-    // Import p-limit dynamically
-    const module = await import('p-limit');
-    pLimit = module.default;
-
-    // Initialize Playwright
     chromium.use(stealth);
     browser = await chromium.launch({ headless: true });
 })();
-
-
-async function getBrowser() {
-    if (!browser || browser.isConnected() === false) {
-        browser = await chromium.launch(); // Restart browser if it was closed
-    }
-    return browser;
-}
 
 // MySQL connection setup
 async function initializeDatabase() {
@@ -47,63 +32,44 @@ initializeDatabase().catch(err => {
     console.error('Failed to connect to the database:', err);
 });
 
-// Helper function to count keywords/phrases in content, ignoring tags, comments, and case
-function countOccurrences(content, searchTerms) {
-    if (!content) {
-        console.warn("No content available to analyze.");
-        return 0;
-    }
-
+// Helper function to count occurrences of exact matches for phrases and keywords
+function countOccurrences(content, searchTerms, exactMatch = false) {
     content = content.replace(/<!--.*?-->|<[^>]*>/g, ""); // Remove comments and HTML tags
     let rank = 0;
+
     searchTerms.forEach(term => {
-        const regex = new RegExp(`\\b${term}\\b`, "gi");
+        const regex = exactMatch
+            ? new RegExp(`\\b${term}\\b`, "g") // Exact phrase match
+            : new RegExp(`\\b${term}\\b`, "gi"); // Case-insensitive keyword match
         rank += (content.match(regex) || []).length;
     });
+
     return rank;
 }
 
-// Function to fetch HTML with Playwright (for JavaScript-heavy pages) with retry and delay
-const fetchHtmlWithPlaywright = async (url, retries = 3) => {
-    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
+// Function to fetch HTML with Playwright (for JavaScript-heavy pages)
+const fetchHtmlWithPlaywright = async (url) => {
     try {
-        const browser = await getBrowser();
-        const page = await browser.newPage();
-
-        // Set custom headers
+        const page = await (await getBrowser()).newPage();
         await page.setExtraHTTPHeaders({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
             'Accept-Language': 'en-US,en;q=0.9'
         });
 
         await page.goto(url, { waitUntil: 'load', timeout: 60000 });
-
-        // Add another random delay of 1 to 5 seconds
-        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
-        // Scroll the page to load additional content
-        await page.evaluate(() => window.scrollBy(0, window.innerHeight));
-        // Add another random delay of 1 to 5 seconds
-        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
-
-        const content = await page.content(); // Get HTML content of the page
+        await page.evaluate(() => window.scrollBy(0, window.innerHeight)); // Scroll to load more content if necessary
+        const content = await page.content();
         await page.close();
         return content;
     } catch (error) {
         console.error(`Error navigating to URL with Playwright ${url}:`, error);
-
-        // Retry if there are retries left
-        if (retries > 0) {
-            console.log(`Retrying in 10 seconds... (${retries} retries left)`);
-            await sleep(10000); // 10-second wait
-            return fetchHtmlWithPlaywright(url, retries - 1);
-        }
+        return null;
     }
 };
 
-// Search route with a queue to limit concurrent requests
+// Search route
 router.get("/search", async (req, res) => {
-    const { query, operator } = req.query; // Access query parameters
+    const { query, operator } = req.query;
     const isAndOperation = operator === "AND";
 
     if (!query) {
@@ -113,6 +79,9 @@ router.get("/search", async (req, res) => {
     // Extract keywords and phrases
     const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
     const keywords = searchTerms.map(term => term.replace(/['"]+/g, ''));
+
+    // Check if any terms are phrases (contain quotes)
+    const hasPhrases = searchTerms.some(term => /^['"].+['"]$/.test(term));
 
     // Initial search in urlKeyword table
     const placeholders = keywords.map(() => "keyword LIKE ?").join(isAndOperation ? " AND " : " OR ");
@@ -124,32 +93,32 @@ router.get("/search", async (req, res) => {
                                                JOIN urlDescription ON urlDescription.url = urlKeyword.url
                                                WHERE ${placeholders}`, values);
 
-        const limit = pLimit(3); // Limit to 3 concurrent page loads
-
-        // Real-time rank calculation with a queue
-        const results = await Promise.all(
-            rows.map(({ url, description }) => limit(async () => {
+        const results = await Promise.all(rows.map(async ({ url, description }) => {
+            if (hasPhrases) {
+                // Fetch URL content for phrases with exact match enabled
                 const content = await fetchHtmlWithPlaywright(url);
                 if (content) {
-                    let rank = 0;
-                    if (isAndOperation) {
-                        if (keywords.every(term => content.includes(term))) {
-                            rank = countOccurrences(content, keywords);
-                        }
-                    } else {
-                        rank = countOccurrences(content, keywords);
-                    }
+                    const rank = countOccurrences(content, keywords, true); // Exact match only
                     return { url, description, rank };
-                } else {
-                    return null;
                 }
-            }))
-        );
+                return null;
+            } else {
+                // Calculate rank from keywords found in database without fetching the page
+                let rank = 0;
+                if (isAndOperation) {
+                    if (keywords.every(term => description.includes(term))) {
+                        rank = countOccurrences(description, keywords);
+                    }
+                } else {
+                    rank = countOccurrences(description, keywords);
+                }
+                return { url, description, rank };
+            }
+        }));
 
         // Sort by rank in descending order and filter out null results
         const sortedResults = results.filter(Boolean).sort((a, b) => b.rank - a.rank);
 
-        // Respond with formatted results
         res.json({
             query, urls: sortedResults
         });
@@ -158,7 +127,6 @@ router.get("/search", async (req, res) => {
         res.status(500).json({ error: 'Database query failed.' });
     }
 
-    // Graceful shutdown for closing the browser
     process.on('exit', async () => {
         if (browser) await browser.close();
     });

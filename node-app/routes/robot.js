@@ -32,6 +32,13 @@ initializeDatabase().catch(err => {
     console.error('Failed to connect to the database:', err);
 });
 
+async function getBrowser() {
+    if (!browser || browser.isConnected() === false) {
+        browser = await chromium.launch(); // Restart browser if it was closed
+    }
+    return browser;
+}
+
 // Helper function to count occurrences of exact matches for phrases and keywords
 function countOccurrences(content, searchTerms, exactMatch = false) {
     content = content.replace(/<!--.*?-->|<[^>]*>/g, ""); // Remove comments and HTML tags

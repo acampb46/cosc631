@@ -213,6 +213,14 @@ const crawlUrls = async () => {
     try {
         let continueCrawling = true;
 
+        // Check if the number of entries in urlDescription is below the minimum threshold
+        const [count] = await connection.query('SELECT COUNT(*) AS count FROM urlDescription');
+        console.log(`Current urlDescription count: ${count[0].count}`);
+        if (count[0].count >= n) {
+            console.log('urlDescription has reached 500 entries. Stopping the crawl process.');
+            continueCrawling = false; // Stop crawling if the limit is reached
+        }
+
         while (continueCrawling) {
             const [results] = await connection.query('SELECT * FROM robotUrl WHERE crawled = "no" ORDER BY pos');
             console.log(`Fetched ${results.length} URLs from robotUrl`);

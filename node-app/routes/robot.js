@@ -109,7 +109,7 @@ router.get("/search", async (req, res) => {
         const results = await Promise.all(
             rows.map(async ({ url, description }) => {
                 try {
-                    const content = await fetchPageContent(url);
+                    const content = await fetchHtmlWithPlaywright(url);
 
                     if (content) {
                         let rank = 0;

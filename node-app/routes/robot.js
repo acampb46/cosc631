@@ -70,7 +70,7 @@ const fetchHtmlWithPlaywright = async (url, retries = 3) => {
             'Accept-Language': 'en-US,en;q=0.9'
         });
 
-        await page.goto(url, { waitUntil: 'domcontentloaded' }); // Wait for page load
+        await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
 
         // Add another random delay of 1 to 5 seconds
         await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));

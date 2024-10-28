@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
-const axios = require('axios');
 const { chromium } = require('playwright-extra');
 const stealth = require("puppeteer-extra-plugin-stealth")();
-const pLimit = require('p-limit');
+
+const pLimit = await import('p-limit').then(module => module.default);
 
 require('dotenv').config();
 // Environment Variables

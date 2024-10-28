@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
 const axios = require('axios');
-const {chromium} = require('playwright-extra');
+const { chromium } = require('playwright-extra');
 const stealth = require("puppeteer-extra-plugin-stealth")();
+const pLimit = require('p-limit');
 
 require('dotenv').config();
 // Environment Variables
@@ -17,7 +18,7 @@ let browser;
 
 (async () => {
     chromium.use(stealth);
-    browser = await chromium.launch({headless: true});
+    browser = await chromium.launch({ headless: true });
 })();
 
 async function getBrowser() {
@@ -56,7 +57,7 @@ function countOccurrences(content, searchTerms) {
     return rank;
 }
 
-// Function to fetch HTML with Playwright (for JavaScript-heavy pages)
+// Function to fetch HTML with Playwright (for JavaScript-heavy pages) with retry and delay
 const fetchHtmlWithPlaywright = async (url, retries = 3) => {
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -84,16 +85,23 @@ const fetchHtmlWithPlaywright = async (url, retries = 3) => {
         return content;
     } catch (error) {
         console.error(`Error navigating to URL with Playwright ${url}:`, error);
+
+        // Retry if there are retries left
+        if (retries > 0) {
+            console.log(`Retrying in 10 seconds... (${retries} retries left)`);
+            await sleep(10000); // 10-second wait
+            return fetchHtmlWithPlaywright(url, retries - 1);
+        }
     }
 };
 
-// Search route
+// Search route with a queue to limit concurrent requests
 router.get("/search", async (req, res) => {
-    const {query, operator} = req.query; // Access query parameters
+    const { query, operator } = req.query; // Access query parameters
     const isAndOperation = operator === "AND";
 
     if (!query) {
-        return res.status(400).json({error: 'Query parameter is required.'});
+        return res.status(400).json({ error: 'Query parameter is required.' });
     }
 
     // Extract keywords and phrases
@@ -107,33 +115,29 @@ router.get("/search", async (req, res) => {
     try {
         const [rows] = await connection.query(`SELECT urlKeyword.url, urlDescription.description
                                                FROM urlKeyword
-                                                        JOIN urlDescription ON urlDescription.url = urlKeyword.url
+                                               JOIN urlDescription ON urlDescription.url = urlKeyword.url
                                                WHERE ${placeholders}`, values);
 
-        // Real-time rank calculation
-        const results = await Promise.all(
-            rows.map(async ({ url, description }) => {
-                try {
-                    const content = await fetchHtmlWithPlaywright(url);
+        const limit = pLimit(3); // Limit to 3 concurrent page loads
 
-                    if (content) {
-                        let rank = 0;
-                        if (isAndOperation) {
-                            if (keywords.every(term => content.includes(term))) {
-                                rank = countOccurrences(content, keywords);
-                            }
-                        } else {
+        // Real-time rank calculation with a queue
+        const results = await Promise.all(
+            rows.map(({ url, description }) => limit(async () => {
+                const content = await fetchHtmlWithPlaywright(url);
+                if (content) {
+                    let rank = 0;
+                    if (isAndOperation) {
+                        if (keywords.every(term => content.includes(term))) {
                             rank = countOccurrences(content, keywords);
                         }
-                        return { url, description, rank };
                     } else {
-                        return null;
+                        rank = countOccurrences(content, keywords);
                     }
-                } catch (err) {
-                    console.error(`Error processing ${url}:`, err);
+                    return { url, description, rank };
+                } else {
                     return null;
                 }
-            })
+            }))
         );
 
         // Sort by rank in descending order and filter out null results
@@ -145,14 +149,13 @@ router.get("/search", async (req, res) => {
         });
     } catch (error) {
         console.error('Error executing query:', error);
-        res.status(500).json({error: 'Database query failed.'});
+        res.status(500).json({ error: 'Database query failed.' });
     }
 
     // Graceful shutdown for closing the browser
     process.on('exit', async () => {
         if (browser) await browser.close();
     });
-
 });
 
 module.exports = router;

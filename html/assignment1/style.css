@@ -35,18 +35,19 @@
             font-size: 14px;
             margin-top: 10px;
         }
-        #resultsTable {
+        table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
-        #resultsTable, #resultsTable th, #resultsTable td {
-            border: 1px solid #333;
+        th, td {
+            border: 1px solid #ccc;
             padding: 8px;
             text-align: left;
         }
-        #resultsTable th {
+        th {
             background-color: #f2f2f2;
+            font-weight: bold;
         }
         h1, h2 {
             text-align: center;

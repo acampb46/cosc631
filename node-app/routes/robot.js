@@ -3,9 +3,9 @@ const router = express.Router();
 const mysql = require('mysql2/promise');
 const { chromium } = require('playwright-extra');
 const stealth = require("puppeteer-extra-plugin-stealth")();
+const pLimit = await import('p-limit').then(module => module.default);
 require('dotenv').config();
 
-// Environment Variables
 const dbHost = process.env.DB_HOST;
 const dbUser = process.env.DB_USER;
 const dbPassword = process.env.DB_PASSWORD;
@@ -19,60 +19,46 @@ let browser;
     browser = await chromium.launch({ headless: true });
 })();
 
-// MySQL connection setup
+async function getBrowser() {
+    if (!browser || browser.isConnected() === false) {
+        browser = await chromium.launch({ headless: true });
+    }
+    return browser;
+}
+
 async function initializeDatabase() {
     connection = await mysql.createConnection({
         host: dbHost, user: dbUser, password: dbPassword, database: dbName
     });
-
-    console.log('Connected to searchEngine database with robot.js');
+    console.log('Connected to the database');
 }
 
 initializeDatabase().catch(err => {
     console.error('Failed to connect to the database:', err);
 });
 
-async function getBrowser() {
-    if (!browser || browser.isConnected() === false) {
-        browser = await chromium.launch(); // Restart browser if it was closed
-    }
-    return browser;
-}
+// Function to fetch HTML with Playwright for phrase-based matching
+const fetchHtmlWithPlaywright = async (url, retries = 3) => {
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Helper function to count occurrences of exact matches for phrases and keywords
-function countOccurrences(content, searchTerms, exactMatch = false) {
-    content = content.replace(/<!--.*?-->|<[^>]*>/g, ""); // Remove comments and HTML tags
-    let rank = 0;
-
-    searchTerms.forEach(term => {
-        const regex = exactMatch
-            ? new RegExp(`\\b${term}\\b`, "g") // Exact phrase match
-            : new RegExp(`\\b${term}\\b`, "gi"); // Case-insensitive keyword match
-        rank += (content.match(regex) || []).length;
-    });
-
-    return rank;
-}
-
-// Function to fetch HTML with Playwright (for JavaScript-heavy pages)
-const fetchHtmlWithPlaywright = async (url) => {
     try {
-        const page = await (await getBrowser()).newPage();
-        await page.setExtraHTTPHeaders({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-            'Accept-Language': 'en-US,en;q=0.9'
-        });
-
+        const browser = await getBrowser();
+        const page = await browser.newPage();
         await page.goto(url, { waitUntil: 'load', timeout: 60000 });
-        await page.evaluate(() => window.scrollBy(0, window.innerHeight)); // Scroll to load more content if necessary
+        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
         const content = await page.content();
         await page.close();
         return content;
     } catch (error) {
         console.error(`Error navigating to URL with Playwright ${url}:`, error);
-        return null;
     }
 };
+
+// Function to calculate occurrences of exact phrases
+function countExactPhrase(content, phrase) {
+    const regex = new RegExp(`\\b${phrase}\\b`, 'gi');
+    return (content.match(regex) || []).length;
+}
 
 // Search route
 router.get("/search", async (req, res) => {
@@ -87,48 +73,45 @@ router.get("/search", async (req, res) => {
     const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
     const keywords = searchTerms.map(term => term.replace(/['"]+/g, ''));
 
-    // Check if any terms are phrases (contain quotes)
-    const hasPhrases = searchTerms.some(term => /^['"].+['"]$/.test(term));
-
-    // Initial search in urlKeyword table
     const placeholders = keywords.map(() => "keyword LIKE ?").join(isAndOperation ? " AND " : " OR ");
     const values = keywords.map(term => `%${term}%`);
 
     try {
-        const [rows] = await connection.query(`SELECT urlKeyword.url, urlDescription.description
-                                               FROM urlKeyword
-                                               JOIN urlDescription ON urlDescription.url = urlKeyword.url
-                                               WHERE ${placeholders}`, values);
+        const [rows] = await connection.query(
+            `SELECT urlKeyword.url, urlKeyword.keyword, urlKeyword.rank, urlDescription.description
+             FROM urlKeyword
+             JOIN urlDescription ON urlDescription.url = urlKeyword.url
+             WHERE ${placeholders}`,
+            values
+        );
 
-        const results = await Promise.all(rows.map(async ({ url, description }) => {
-            if (hasPhrases) {
-                // Fetch URL content for phrases with exact match enabled
-                const content = await fetchHtmlWithPlaywright(url);
-                if (content) {
-                    const rank = countOccurrences(content, keywords, true); // Exact match only
-                    return { url, description, rank };
-                }
-                return null;
-            } else {
-                // Calculate rank from keywords found in database without fetching the page
-                let rank = 0;
-                if (isAndOperation) {
-                    if (keywords.every(term => description.includes(term))) {
-                        rank = countOccurrences(description, keywords);
+        const results = await Promise.all(
+            rows.map(async ({ url, keyword, rank, description }) => {
+                let totalRank = rank;
+
+                // Check if term is an exact phrase requiring a page fetch
+                const exactPhraseMatch = searchTerms.find(term => term.startsWith('"') || term.startsWith("'"));
+                if (exactPhraseMatch) {
+                    const pageContent = await fetchHtmlWithPlaywright(url);
+                    if (pageContent) {
+                        totalRank += countExactPhrase(pageContent, exactPhraseMatch.replace(/['"]+/g, ''));
                     }
                 } else {
-                    rank = countOccurrences(description, keywords);
+                    // If no phrase, add database rank directly
+                    keywords.forEach(term => {
+                        if (description.includes(term) || keyword.includes(term)) {
+                            totalRank += rank;
+                        }
+                    });
                 }
-                return { url, description, rank };
-            }
-        }));
 
-        // Sort by rank in descending order and filter out null results
+                return { url, description, rank: totalRank };
+            })
+        );
+
         const sortedResults = results.filter(Boolean).sort((a, b) => b.rank - a.rank);
 
-        res.json({
-            query, urls: sortedResults
-        });
+        res.json({ query, urls: sortedResults });
     } catch (error) {
         console.error('Error executing query:', error);
         res.status(500).json({ error: 'Database query failed.' });

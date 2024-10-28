@@ -91,9 +91,18 @@ router.get("/search", async (req, res) => {
                 // Check if term is an exact phrase requiring a page fetch
                 const exactPhraseMatch = searchTerms.find(term => term.startsWith('"') || term.startsWith("'"));
                 if (exactPhraseMatch) {
-                    const pageContent = await fetchHtmlWithPlaywright(url);
-                    if (pageContent) {
-                        totalRank += countExactPhrase(pageContent, exactPhraseMatch.replace(/['"]+/g, ''));
+                    const phraseKeywords = exactPhraseMatch.replace(/['"]+/g, '').split(' ');
+
+                    // Ensure all keywords in the phrase are present in either `keyword` or `description`
+                    const phraseKeywordsFound = phraseKeywords.every(term =>
+                        description.includes(term) || keyword.includes(term)
+                    );
+
+                    if (phraseKeywordsFound) {
+                        const pageContent = await fetchHtmlWithPlaywright(url);
+                        if (pageContent) {
+                            totalRank += countExactPhrase(pageContent, exactPhraseMatch.replace(/['"]+/g, ''));
+                        }
                     }
                 } else {
                     // If no phrase, add database rank directly

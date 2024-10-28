@@ -4,8 +4,6 @@ const mysql = require('mysql2/promise');
 const { chromium } = require('playwright-extra');
 const stealth = require("puppeteer-extra-plugin-stealth")();
 
-const pLimit = await import('p-limit').then(module => module.default);
-
 require('dotenv').config();
 // Environment Variables
 const dbHost = process.env.DB_HOST;
@@ -16,10 +14,18 @@ const dbName = process.env.DB_NAME;
 let connection;
 let browser;
 
+// Async function to import p-limit
+let pLimit;
 (async () => {
+    // Import p-limit dynamically
+    const module = await import('p-limit');
+    pLimit = module.default;
+
+    // Initialize Playwright
     chromium.use(stealth);
     browser = await chromium.launch({ headless: true });
 })();
+
 
 async function getBrowser() {
     if (!browser || browser.isConnected() === false) {

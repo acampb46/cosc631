@@ -3,7 +3,6 @@ const router = express.Router();
 const mysql = require('mysql2/promise');
 const { chromium } = require('playwright-extra');
 const stealth = require("puppeteer-extra-plugin-stealth")();
-const pLimit = await import('p-limit').then(module => module.default);
 require('dotenv').config();
 
 const dbHost = process.env.DB_HOST;

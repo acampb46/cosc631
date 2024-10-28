@@ -20,6 +20,12 @@ let browser;
     browser = await chromium.launch({headless: true});
 })();
 
+async function getBrowser() {
+    if (!browser || browser.isConnected() === false) {
+        browser = await chromium.launch(); // Restart browser if it was closed
+    }
+    return browser;
+}
 
 // MySQL connection setup
 async function initializeDatabase() {

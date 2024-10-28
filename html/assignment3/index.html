@@ -26,7 +26,8 @@
     <button type="submit">Search</button>
 </form>
 
-<div id="resultsContainer">
+<!-- Results container with hidden display initially -->
+<div id="resultsContainer" style="display: none;">
     <h2>Results:</h2>
     <table id="resultsTable">
         <thead>
@@ -80,9 +81,7 @@
                 resultsBody.appendChild(row);
             });
         } else {
-            // Hide the results container if no results are found
             document.getElementById('resultsContainer').style.display = 'none';
-            resultsBody.innerHTML = '<tr><td colspan="3" class="no-results">No results found.</td></tr>';
         }
     });
 </script>

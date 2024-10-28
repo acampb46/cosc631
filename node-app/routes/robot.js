@@ -29,10 +29,15 @@ initializeDatabase().catch(err => {
 
 // Helper function to count keywords/phrases in content, ignoring tags, comments, and case
 function countOccurrences(content, searchTerms) {
-    content = content.replace(/<!--.*?-->|<[^>]*>/g, "").toLowerCase(); // Remove comments, tags, and convert to lowercase
+    if (!content) {
+        console.warn("No content available to analyze.");
+        return 0;
+    }
+
+    content = content.replace(/<!--.*?-->|<[^>]*>/g, ""); // Remove comments and HTML tags
     let rank = 0;
     searchTerms.forEach(term => {
-        const regex = new RegExp(`\\b${term.toLowerCase()}\\b`, "gi"); // Convert each term to lowercase
+        const regex = new RegExp(`\\b${term}\\b`, "gi");
         rank += (content.match(regex) || []).length;
     });
     return rank;
@@ -101,33 +106,37 @@ router.get("/search", async (req, res) => {
                                                WHERE ${placeholders}`, values);
 
         // Real-time rank calculation
-        const results = await Promise.all(rows.map(async ({url, description}) => {
-            try {
-                const response = await fetchHtmlWithPlaywright(url);
-                const content = response.data; // HTML content as text
+        const results = await Promise.all(
+            rows.map(async ({ url, description }) => {
+                try {
+                    const content = await fetchPageContent(url);
 
-                let rank = 0;
-                if (isAndOperation) {
-                    if (keywords.every(term => content.includes(term))) {
-                        rank = countOccurrences(content, keywords);
+                    if (content) {
+                        let rank = 0;
+                        if (isAndOperation) {
+                            if (keywords.every(term => content.includes(term))) {
+                                rank = countOccurrences(content, keywords);
+                            }
+                        } else {
+                            rank = countOccurrences(content, keywords);
+                        }
+                        return { url, description, rank };
+                    } else {
+                        return null;
                     }
-                } else {
-                    rank = countOccurrences(content, keywords);
+                } catch (err) {
+                    console.error(`Error processing ${url}:`, err);
+                    return null;
                 }
-
-                return {url, description, rank};
-            } catch (err) {
-                console.error(`Error fetching ${url}:`, err);
-                return null;
-            }
-        }));
+            })
+        );
 
         // Sort by rank in descending order and filter out null results
         const sortedResults = results.filter(Boolean).sort((a, b) => b.rank - a.rank);
 
         // Respond with formatted results
         res.json({
-            query, urls: sortedResults // Ensure this is the structure you expect in your client-side code
+            query, urls: sortedResults
         });
     } catch (error) {
         console.error('Error executing query:', error);

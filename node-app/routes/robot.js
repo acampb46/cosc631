@@ -13,12 +13,13 @@ const dbPassword = process.env.DB_PASSWORD;
 const dbName = process.env.DB_NAME;
 
 let connection;
-let browser; // Declare the browser globally
+let browser;
 
 (async () => {
     chromium.use(stealth);
     browser = await chromium.launch({headless: true});
 })();
+
 
 // MySQL connection setup
 async function initializeDatabase() {
@@ -54,6 +55,7 @@ const fetchHtmlWithPlaywright = async (url, retries = 3) => {
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     try {
+        const browser = await getBrowser();
         const page = await browser.newPage();
 
         // Set custom headers

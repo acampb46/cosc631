@@ -13,6 +13,12 @@ const dbPassword = process.env.DB_PASSWORD;
 const dbName = process.env.DB_NAME;
 
 let connection;
+let browser; // Declare the browser globally
+
+(async () => {
+    chromium.use(stealth);
+    browser = await chromium.launch({headless: true});
+})();
 
 // MySQL connection setup
 async function initializeDatabase() {
@@ -48,8 +54,6 @@ const fetchHtmlWithPlaywright = async (url, retries = 3) => {
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     try {
-        chromium.use(stealth);
-        const browser = await chromium.launch({headless: true});
         const page = await browser.newPage();
 
         // Set custom headers
@@ -68,7 +72,7 @@ const fetchHtmlWithPlaywright = async (url, retries = 3) => {
         await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
 
         const content = await page.content(); // Get HTML content of the page
-        await browser.close();
+        await page.close();
         return content;
     } catch (error) {
         console.error(`Error navigating to URL with Playwright ${url}:`, error);
@@ -142,6 +146,12 @@ router.get("/search", async (req, res) => {
         console.error('Error executing query:', error);
         res.status(500).json({error: 'Database query failed.'});
     }
+
+    // Graceful shutdown for closing the browser
+    process.on('exit', async () => {
+        if (browser) await browser.close();
+    });
+
 });
 
 module.exports = router;

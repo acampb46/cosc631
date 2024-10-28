@@ -84,13 +84,6 @@ const fetchHtmlWithPlaywright = async (url, retries = 3) => {
         return content;
     } catch (error) {
         console.error(`Error navigating to URL with Playwright ${url}:`, error);
-
-        // Check if it's a verification error and if there are retries left
-        if (retries > 0) {
-            console.log(`Waiting for 10 seconds before retrying...`);
-            await sleep(10000); // 10-second wait
-            return fetchHtmlWithPlaywright(url, retries - 1); // Retry fetching data
-        }
     }
 };
 

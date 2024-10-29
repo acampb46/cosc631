@@ -72,18 +72,32 @@ router.get("/search", async (req, res) => {
     const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
     const keywords = searchTerms.map(term => term.replace(/['"]+/g, ''));
 
+    console.log('Keywords:', keywords); // Debug log for keywords
+
+    if (keywords.length === 0) {
+        return res.status(400).json({ error: 'No valid keywords found.' });
+    }
+
     try {
-        // If AND operation, use a subquery to ensure all keywords exist for a single URL
+        // If AND operation, ensure all keywords exist for a single URL
         let sql = `SELECT urlKeyword.url, urlDescription.description, SUM(urlKeyword.rank) AS totalRank
                    FROM urlKeyword
                    JOIN urlDescription ON urlDescription.url = urlKeyword.url
-                   WHERE ${keywords.map((_, index) => `keyword LIKE ?`).join(' AND ')}
+                   WHERE ${keywords.map(() => `keyword LIKE ?`).join(' AND ')}
                    GROUP BY urlKeyword.url
                    HAVING COUNT(DISTINCT urlKeyword.keyword) = ?`;
 
         const values = [...keywords.map(term => `%${term}%`), keywords.length];
+        console.log('SQL:', sql); // Debug log for SQL query
+        console.log('Values:', values); // Debug log for query values
 
         const [rows] = await connection.query(sql, values);
+
+        console.log('Rows:', rows); // Debug log for rows returned
+
+        if (rows.length === 0) {
+            return res.json({ query, urls: [] }); // Return empty if no rows found
+        }
 
         const results = await Promise.all(
             rows.map(async ({ url, description, totalRank }) => {
@@ -125,6 +139,7 @@ router.get("/search", async (req, res) => {
         if (browser) await browser.close();
     });
 });
+
 
 
 

@@ -72,16 +72,19 @@ router.get("/search", async (req, res) => {
     const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
     const keywords = searchTerms.map(term => term.replace(/['"]+/g, ''));
 
+    // Create SQL placeholders for the keywords
     const placeholders = keywords.map(() => "keyword LIKE ?").join(isAndOperation ? " AND " : " OR ");
     const values = keywords.map(term => `%${term}%`);
 
     try {
         const [rows] = await connection.query(
-            `SELECT DISTINCT urlKeyword.url, urlKeyword.keyword, urlKeyword.rank, urlDescription.description
+            `SELECT urlKeyword.url, urlKeyword.keyword, urlKeyword.rank, urlDescription.description
              FROM urlKeyword
-                      JOIN urlDescription ON urlDescription.url = urlKeyword.url
-             WHERE ${placeholders}`,
-            values
+             JOIN urlDescription ON urlDescription.url = urlKeyword.url
+             WHERE ${placeholders}
+             GROUP BY urlKeyword.url
+             HAVING COUNT(DISTINCT keyword) = ?`,
+            [...values, keywords.length]
         );
 
         const results = await Promise.all(
@@ -134,5 +137,6 @@ router.get("/search", async (req, res) => {
         if (browser) await browser.close();
     });
 });
+
 
 module.exports = router;

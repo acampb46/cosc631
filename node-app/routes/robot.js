@@ -1,61 +1,3 @@
-const express = require('express');
-const router = express.Router();
-const mysql = require('mysql2/promise');
-const { chromium } = require('playwright-extra');
-const stealth = require("puppeteer-extra-plugin-stealth")();
-require('dotenv').config();
-
-const dbHost = process.env.DB_HOST;
-const dbUser = process.env.DB_USER;
-const dbPassword = process.env.DB_PASSWORD;
-const dbName = process.env.DB_NAME;
-
-let connection;
-let browser;
-
-(async () => {
-    chromium.use(stealth);
-    browser = await chromium.launch({ headless: true });
-})();
-
-async function getBrowser() {
-    if (!browser || browser.isConnected() === false) {
-        browser = await chromium.launch({ headless: true });
-    }
-    return browser;
-}
-
-async function initializeDatabase() {
-    connection = await mysql.createConnection({
-        host: dbHost, user: dbUser, password: dbPassword, database: dbName
-    });
-    console.log('Connected to the database');
-}
-
-initializeDatabase().catch(err => {
-    console.error('Failed to connect to the database:', err);
-});
-
-// Function to fetch HTML with Playwright for phrase-based matching
-const fetchHtmlWithPlaywright = async (url) => {
-    try {
-        const browser = await getBrowser();
-        const page = await browser.newPage();
-        await page.goto(url, { waitUntil: 'load', timeout: 60000 });
-        const content = await page.content();
-        await page.close();
-        return content;
-    } catch (error) {
-        console.error(`Error navigating to URL with Playwright ${url}:`, error);
-    }
-};
-
-// Function to calculate occurrences of exact phrases
-function countExactPhrase(content, phrase) {
-    const regex = new RegExp(`\\b${phrase}\\b`, 'gi');
-    return (content.match(regex) || []).length;
-}
-
 // Search route
 router.get("/search", async (req, res) => {
     const { query, operator } = req.query;
@@ -102,6 +44,12 @@ router.get("/search", async (req, res) => {
 
         const [keywordResults] = await connection.query(sqlQuery, values);
 
+        if (keywordResults.length === 0) {
+            // No results found
+            console.log("No results found for query:", query);
+            return res.json({ message: "no results" });
+        }
+
         // Process results, handling any exact phrase matching
         const results = await Promise.all(
             keywordResults.map(async ({ url, totalRank }) => {
@@ -128,6 +76,7 @@ router.get("/search", async (req, res) => {
 
         const sortedResults = results.filter(Boolean).sort((a, b) => b.rank - a.rank);
         console.log("Final results:", sortedResults);
+
         res.json({ query, urls: sortedResults });
     } catch (error) {
         console.error('Error executing query:', error);

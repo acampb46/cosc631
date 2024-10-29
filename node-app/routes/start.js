@@ -14,7 +14,7 @@ const dbName = process.env.DB_NAME;
 
 // Constants
 const k = 10; // Number of keywords to extract
-const n = 500; // Minimum number of entries in urlDescription
+const n = 1000; // Minimum number of entries in urlDescription
 
 // MySQL connection pool
 const connection = mysql.createPool({

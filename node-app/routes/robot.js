@@ -79,15 +79,26 @@ router.get("/search", async (req, res) => {
     }
 
     try {
-        // If AND operation, ensure all keywords exist for a single URL
+        // Build SQL query based on the operator
+        const operatorSql = isAndOperation ? 'AND' : 'OR';
+        const whereClause = keywords.map(() => `keyword LIKE ?`).join(` ${operatorSql} `);
+
         let sql = `SELECT urlKeyword.url, urlDescription.description, SUM(urlKeyword.rank) AS totalRank
                    FROM urlKeyword
                    JOIN urlDescription ON urlDescription.url = urlKeyword.url
-                   WHERE ${keywords.map(() => `keyword LIKE ?`).join(' AND ')}
-                   GROUP BY urlKeyword.url
-                   HAVING COUNT(DISTINCT urlKeyword.keyword) = ?`;
+                   WHERE ${whereClause}
+                   GROUP BY urlKeyword.url`;
 
-        const values = [...keywords.map(term => `%${term}%`), keywords.length];
+        // If AND operation, ensure all keywords exist for a single URL
+        if (isAndOperation) {
+            sql += ` HAVING COUNT(DISTINCT urlKeyword.keyword) = ?`;
+        }
+
+        const values = [...keywords.map(term => `%${term}%`)];
+        if (isAndOperation) {
+            values.push(keywords.length);
+        }
+
         console.log('SQL:', sql); // Debug log for SQL query
         console.log('Values:', values); // Debug log for query values
 
@@ -139,6 +150,7 @@ router.get("/search", async (req, res) => {
         if (browser) await browser.close();
     });
 });
+
 
 
 

@@ -79,7 +79,7 @@ router.get("/search", async (req, res) => {
         const [rows] = await connection.query(
             `SELECT DISTINCT urlKeyword.url, urlKeyword.keyword, urlKeyword.rank, urlDescription.description
              FROM urlKeyword
-             JOIN urlDescription ON urlDescription.url = urlKeyword.url
+                      JOIN urlDescription ON urlDescription.url = urlKeyword.url
              WHERE ${placeholders}`,
             values
         );
@@ -87,35 +87,38 @@ router.get("/search", async (req, res) => {
         const results = await Promise.all(
             rows.map(async ({ url, keyword, rank, description }) => {
                 let totalRank = rank;
+                let matchedExactPhrase = false;
 
-                // Check if term is an exact phrase requiring a page fetch
-                const exactPhraseMatches = searchTerms.filter(term => term.startsWith('"') || term.startsWith("'"));
-                let uniqueUrls = new Set();
+                // Check for exact phrases
+                for (const exactPhraseMatch of searchTerms.filter(term => term.startsWith('"') || term.startsWith("'"))) {
+                    const cleanPhrase = exactPhraseMatch.replace(/['"]+/g, '');
 
-                for (const exactPhraseMatch of exactPhraseMatches) {
-                    const phraseKeywords = exactPhraseMatch.replace(/['"]+/g, '').split(' ');
+                    // Ensure the phrase is found in either `keyword` or `description`
+                    if (description.includes(cleanPhrase) || keyword.includes(cleanPhrase)) {
+                        matchedExactPhrase = true;
 
-                    // Ensure all keywords in the phrase are present in either `keyword` or `description`
-                    const phraseKeywordsFound = phraseKeywords.every(term =>
-                        description.includes(term) || keyword.includes(term)
-                    );
-
-                    if (phraseKeywordsFound) {
+                        // Fetch the content from the URL
                         const pageContent = await fetchHtmlWithPlaywright(url);
                         if (pageContent) {
-                            const count = countExactPhrase(pageContent, exactPhraseMatch.replace(/['"]+/g, ''));
-                            totalRank += count;
+                            totalRank += countExactPhrase(pageContent, cleanPhrase);
                         }
                     }
                 }
 
-                // Add to unique URLs set
-                uniqueUrls.add(url);
+                // If no exact phrase is matched but keywords match, still calculate the total rank based on keywords
+                if (!matchedExactPhrase) {
+                    keywords.forEach(term => {
+                        if (description.includes(term) || keyword.includes(term)) {
+                            totalRank += rank;
+                        }
+                    });
+                }
 
                 return { url, description, rank: totalRank };
             })
         );
 
+        // Filter unique URLs and sort by rank
         const uniqueResults = Array.from(new Set(results.map(r => r.url)))
             .map(url => results.find(r => r.url === url));
 

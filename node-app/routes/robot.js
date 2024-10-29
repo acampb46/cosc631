@@ -68,26 +68,34 @@ router.get("/search", async (req, res) => {
         return res.status(400).json({ error: 'Query parameter is required.' });
     }
 
-    // Extract keywords and phrases including those with multiple words
+    // Extract keywords and phrases, allowing for multiple phrases
     const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
-    const keywords = searchTerms.map(term => term.replace(/['"]+/g, ''));
+    const phrases = searchTerms.filter(term => term.startsWith('"') || term.startsWith("'")).map(term => term.replace(/['"]+/g, ''));
+    const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'"))).map(term => term.replace(/['"]+/g, ''));
 
+    console.log('Phrases:', phrases); // Debug log for phrases
     console.log('Keywords:', keywords); // Debug log for keywords
 
-    if (keywords.length === 0) {
-        return res.status(400).json({ error: 'No valid keywords found.' });
+    if (phrases.length === 0 && keywords.length === 0) {
+        return res.status(400).json({ error: 'No valid keywords or phrases found.' });
     }
 
     try {
         // Build SQL query based on the operator
         const operatorSql = isAndOperation ? 'AND' : 'OR';
-        const whereClause = keywords.map(() => `keyword LIKE ?`).join(` ${operatorSql} `);
-
+        const keywordConditions = keywords.map(() => `keyword LIKE ?`).join(` ${operatorSql} `);
         let sql = `SELECT urlKeyword.url, urlDescription.description, SUM(urlKeyword.rank) AS totalRank
                    FROM urlKeyword
                    JOIN urlDescription ON urlDescription.url = urlKeyword.url
-                   WHERE ${whereClause}
-                   GROUP BY urlKeyword.url`;
+                   WHERE ${keywordConditions}`;
+
+        // If there are phrases, include them in the WHERE clause
+        if (phrases.length > 0) {
+            const phraseConditions = phrases.map(() => `description LIKE ?`).join(` ${operatorSql} `);
+            sql += ` AND (${phraseConditions})`;
+        }
+
+        sql += ` GROUP BY urlKeyword.url`;
 
         // If AND operation, ensure all keywords exist for a single URL
         if (isAndOperation) {
@@ -95,6 +103,9 @@ router.get("/search", async (req, res) => {
         }
 
         const values = [...keywords.map(term => `%${term}%`)];
+        if (phrases.length > 0) {
+            values.push(...phrases.map(term => `%${term}%`));
+        }
         if (isAndOperation) {
             values.push(keywords.length);
         }
@@ -112,11 +123,8 @@ router.get("/search", async (req, res) => {
 
         const results = await Promise.all(
             rows.map(async ({ url, description, totalRank }) => {
-                // Check for exact phrases
-                for (const exactPhraseMatch of searchTerms.filter(term => term.startsWith('"') || term.startsWith("'"))) {
-                    const cleanPhrase = exactPhraseMatch.replace(/['"]+/g, '');
-
-                    // Ensure the phrase is found in description
+                // Count occurrences for all phrases
+                for (const cleanPhrase of phrases) {
                     if (description.includes(cleanPhrase)) {
                         // Fetch the content from the URL
                         const pageContent = await fetchHtmlWithPlaywright(url);
@@ -126,7 +134,7 @@ router.get("/search", async (req, res) => {
                     }
                 }
 
-                // Add counts for individual keywords found in the description or fetched content
+                // Count occurrences for individual keywords found in the description or fetched content
                 keywords.forEach(keyword => {
                     if (description.includes(keyword)) {
                         totalRank += 1; // Adjust this logic based on your ranking criteria
@@ -153,6 +161,7 @@ router.get("/search", async (req, res) => {
         if (browser) await browser.close();
     });
 });
+
 
 
 

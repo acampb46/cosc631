@@ -71,13 +71,13 @@ router.get("/search", async (req, res) => {
     const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'"))).map(term => term.replace(/['"]+/g, ''));
 
     try {
-        // Build SQL for keyword matching
-        const keywordConditions = keywords.map(() => "keyword LIKE ?").join(isAndOperation ? " AND " : " OR ");
+        // SQL to match keywords, with HAVING clause for AND operation
+        const keywordConditions = keywords.map(() => "keyword LIKE ?").join(isAndOperation ? " OR " : " OR ");
         const keywordValues = keywords.map(term => `%${term}%`);
 
         let sqlQuery = `SELECT url, SUM(\`rank\`) AS totalRank FROM urlKeyword WHERE ${keywordConditions} GROUP BY url`;
 
-        // For AND, ensure all keywords are present using HAVING clause
+        // For AND, ensure URLs contain all keywords using HAVING clause
         if (isAndOperation) {
             sqlQuery += ` HAVING COUNT(DISTINCT keyword) = ?`;
             keywordValues.push(keywords.length);

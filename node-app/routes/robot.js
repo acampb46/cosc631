@@ -82,12 +82,20 @@ router.get("/search", async (req, res) => {
 
     try {
         // Step 1: Search for keywords
+        let keywordSql = `SELECT url, SUM(rank) AS totalRank FROM urlKeyword`;
         const keywordConditions = keywords.map(() => `keyword LIKE ?`).join(isAndOperation ? ' AND ' : ' OR ');
-        const keywordSql = `SELECT url, SUM(rank) AS totalRank
-                            FROM urlKeyword
-                            WHERE ${keywordConditions}
-                            GROUP BY url`;
+
+        // Only add WHERE and conditions if there are keywords
+        if (keywordConditions) {
+            keywordSql += ` WHERE ${keywordConditions}`;
+        }
+
+        keywordSql += ` GROUP BY url`;
         const keywordValues = keywords.map(term => `%${term}%`);
+
+        // Log the SQL and values for debugging
+        console.log('Keyword SQL:', keywordSql);
+        console.log('Keyword Values:', keywordValues);
 
         const [keywordResults] = await connection.query(keywordSql, keywordValues);
 

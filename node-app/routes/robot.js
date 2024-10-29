@@ -82,7 +82,7 @@ router.get("/search", async (req, res) => {
 
     try {
         // Step 1: Search for keywords
-        let keywordSql = `SELECT url, SUM(rank) AS totalRank FROM urlKeyword`;
+        let keywordSql = `SELECT url, SUM(\`rank\`) AS totalRank FROM urlKeyword`;
         const keywordConditions = keywords.map(() => `keyword LIKE ?`).join(isAndOperation ? ' AND ' : ' OR ');
 
         // Only add WHERE and conditions if there are keywords

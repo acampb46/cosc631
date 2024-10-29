@@ -1,233 +1,172 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
-const {chromium} = require('playwright-extra');
+const { chromium } = require('playwright-extra');
 const stealth = require("puppeteer-extra-plugin-stealth")();
-const {parse} = require('node-html-parser');
-
 require('dotenv').config();
-// Environment Variables
+
 const dbHost = process.env.DB_HOST;
 const dbUser = process.env.DB_USER;
 const dbPassword = process.env.DB_PASSWORD;
 const dbName = process.env.DB_NAME;
 
-// Constants
-const k = 10; // Number of keywords to extract
-const n = 500; // Minimum number of entries in urlDescription
+let connection;
+let browser;
 
-// MySQL connection pool
-const connection = mysql.createPool({
-    host: dbHost,
-    user: dbUser,
-    password: dbPassword,
-    database: dbName,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
+(async () => {
+    chromium.use(stealth);
+    browser = await chromium.launch({ headless: true });
+})();
 
-// Test the database connection
-async function testConnection() {
-    try {
-        const conn = await connection.getConnection();
-        console.log('Connected to searchEngine database with start.js');
-        conn.release();
-    } catch (err) {
-        console.error('Error connecting to the database:', err);
+async function getBrowser() {
+    if (!browser || browser.isConnected() === false) {
+        browser = await chromium.launch({ headless: true });
     }
+    return browser;
 }
 
-testConnection();
+async function initializeDatabase() {
+    connection = await mysql.createConnection({
+        host: dbHost, user: dbUser, password: dbPassword, database: dbName
+    });
+    console.log('Connected to the database');
+}
 
-// Function to count occurrences of a word in a given text
-const countOccurrences = (text, word) => {
-    const regex = new RegExp(`\\b${word}\\b`, 'gi'); // Matches whole words, case insensitive
-    const matches = text.match(regex); // Get matches
-    return matches ? matches.length : 0; // Return the count
-};
+initializeDatabase().catch(err => {
+    console.error('Failed to connect to the database:', err);
+});
 
-// Function to extract keywords and description from the HTML content
-const extractKeywordsAndDescription = (root) => {
-    let keywords = new Set();
-    let description = '';
-
-    const addKeywordsFromString = (str) => {
-        const unwantedPatterns = [/<[^>]+>/g,  // Ignore HTML tags
-            /src=["'][^"']*["']/g, // Ignore src attributes
-            /href=["'][^"']*["']/g, // Ignore href attributes
-            /[^\w\s]/g, // Ignore non-word characters (punctuation, etc.)
-            /(?:^| )\w{1,2}(?:$| )/g, // Ignore short words (1-2 letters)
-        ];
-
-        unwantedPatterns.forEach(pattern => {
-            str = str.replace(pattern, ' ');
-        });
-
-        str.split(/\s+/)
-            .filter(word => word.length >= 3) // Ensure keyword is at least 3 characters
-            .forEach(word => keywords.add(word));
-    };
-
-    // Check meta description tags first
-    const metaDescription = root.querySelector('meta[name="description"]') || root.querySelector('meta[property="og:description"]');
-    if (metaDescription) {
-        description = metaDescription.getAttribute('content') || '';
-        description = description.slice(0, 200); // Limit to 200 characters
-        console.log('Meta description found:', description);
-    }
-
-    // Check meta keyword tag
-    const metaKeywords = root.querySelector('meta[name="keyword"]') || root.querySelector('meta[name="keywords"]');
-    if (metaKeywords) {
-        let keywordsContent = metaKeywords.getAttribute('content') || '';
-        addKeywordsFromString(keywordsContent);
-        console.log('Meta keywords found:', keywordsContent);
-    }
-
-    // If no description has been set, fall back to the title tag
-    if (!description) {
-        const titleTag = root.querySelector('title');
-        if (titleTag) {
-            addKeywordsFromString(titleTag.text);
-            description = titleTag.text.slice(0, 200); // Limit to 200 characters
-            console.log('Fallback to title tag:', description);
-        }
-    }
-
-    // If still no description, check headings
-    if (!description) {
-        const headings = root.querySelectorAll('h1, h2, h3, h4, h5, h6');
-        for (let heading of headings) {
-            addKeywordsFromString(heading.text);
-            if (!description) {
-                description = heading.text.slice(0, 200); // Limit to 200 characters
-                console.log('Fallback to headings:', description);
-            }
-        }
-    }
-
-    // If no meta description is found, try the body text first for keywords
-    const bodyText = root.querySelector('body')?.text || '';
-    if (bodyText) {
-        if (!description) {
-            description = bodyText.slice(0, 200); // Limit to 200 characters
-            console.log('Fallback to body text:', description);
-        }
-    }
-
-    if(description) {
-        addKeywordsFromString(description);
-    }
-
-    return {keywords: Array.from(keywords).slice(0, k), description};
-};
-
-
-// Function to fetch HTML with Playwright (for JavaScript-heavy pages)
-const fetchHtmlWithPlaywright = async (url, retries = 3) => {
+// Function to fetch HTML with Playwright for phrase-based matching
+const fetchHtmlWithPlaywright = async (url) => {
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     try {
-        chromium.use(stealth);
-        const browser = await chromium.launch({headless: true});
+        const browser = await getBrowser();
         const page = await browser.newPage();
-
-        // Set custom headers
-        await page.setExtraHTTPHeaders({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-            'Accept-Language': 'en-US,en;q=0.9'
-        });
-
-        await page.goto(url, { waitUntil: 'domcontentloaded' }); // Wait for page load
-
-        // Add another random delay of 1 to 5 seconds
-        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
-        // Scroll the page to load additional content
-        await page.evaluate(() => window.scrollBy(0, window.innerHeight));
-        // Add another random delay of 1 to 5 seconds
-        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
-
-        const html = await page.content(); // Get HTML content of the page
-        await browser.close();
-        return html;
+        await page.goto(url, { waitUntil: 'load', timeout: 60000 });
+        await sleep(Math.floor(Math.random() * 4000 + 1000)); // Random wait time
+        const content = await page.content();
+        await page.close();
+        return content;
     } catch (error) {
         console.error(`Error navigating to URL with Playwright ${url}:`, error);
+    }
+};
 
-        // Check if it's a verification error and if there are retries left
-        if (retries > 0) {
-            console.log(`Waiting for 10 seconds before retrying...`);
-            await sleep(10000); // 10-second wait
-            return fetchHtmlWithPlaywright(url, retries - 1); // Retry fetching data
+// Function to calculate occurrences of exact phrases
+function countExactPhrase(content, phrase) {
+    const regex = new RegExp(`\\b${phrase}\\b`, 'gi');
+    return (content.match(regex) || []).length;
+}
+
+// Search route
+router.get("/search", async (req, res) => {
+    const { query, operator } = req.query;  // Ensure you're receiving the operator from the query params
+    const isAndOperation = operator === "AND";  // Determine if AND operation is selected
+
+    if (!query) {
+        return res.status(400).json({ error: 'Query parameter is required.' });
+    }
+
+    // Extract keywords and phrases, allowing for multiple phrases
+    const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
+    const phrases = searchTerms.filter(term => term.startsWith('"') || term.startsWith("'")).map(term => term.replace(/['"]+/g, ''));
+    const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'"))).map(term => term.replace(/['"]+/g, ''));
+
+    console.log('Phrases:', phrases); // Debug log for phrases
+    console.log('Keywords:', keywords); // Debug log for keywords
+
+    if (phrases.length === 0 && keywords.length === 0) {
+        return res.status(400).json({ error: 'No valid keywords or phrases found.' });
+    }
+
+    try {
+        // Build SQL query based on the operator
+        const operatorSql = isAndOperation ? 'AND' : 'OR';
+        const keywordConditions = keywords.map(() => `keyword LIKE ?`).join(` ${operatorSql} `);
+        let sql = `SELECT urlKeyword.url, urlDescription.description, SUM(urlKeyword.rank) AS totalRank
+                   FROM urlKeyword
+                   JOIN urlDescription ON urlDescription.url = urlKeyword.url
+                   WHERE ${keywordConditions}`;
+
+        // If there are phrases, include them in the WHERE clause
+        if (phrases.length > 0) {
+            const phraseConditions = phrases.map(() => `description LIKE ?`).join(` ${operatorSql} `);
+            sql += ` AND (${phraseConditions})`;
         }
-    }
-};
 
-// Function to fetch HTML using Playwright or cloudscraper based on site
-const fetchHtml = async (url) => {
-    try {
-        const html = await fetchHtmlWithPlaywright(url);
-        if (html) {
-            return html;
+        sql += ` GROUP BY urlKeyword.url`;
+
+        // If AND operation, ensure all keywords exist for a single URL
+        if (isAndOperation) {
+            sql += ` HAVING COUNT(DISTINCT urlKeyword.keyword) = ?`;
         }
-    } catch (error) {
-        console.error(`Error fetching HTML from ${url}:`, error);
-    }
-};
 
-// Function to get the highest current pos value
-const getNextPos = async () => {
-    try {
-        const [rows] = await connection.query('SELECT MAX(pos) AS maxPos FROM robotUrl');
-        return rows[0].maxPos ? rows[0].maxPos + 1 : 1; // If no rows exist, start from 1
-    } catch (error) {
-        console.error('Error fetching max pos:', error);
-    }
-};
+        const values = [...keywords.map(term => `%${term}%`)];
+        if (phrases.length > 0) {
+            values.push(...phrases.map(term => `%${term}%`));
+        }
+        if (isAndOperation) {
+            values.push(keywords.length);
+        }
 
-// Function to insert a new URL into the robotUrl table
-const insertUrlWithPos = async (url) => {
-    try {
-        const nextPos = await getNextPos(); // Get the next position
-        await connection.query('INSERT INTO robotUrl (url, pos, crawled) VALUES (?, ?, ?)', [url, nextPos, 'no']);
-        console.log(`Inserted URL: ${url}, Position: ${nextPos}`);
-    } catch (error) {
-        console.error('Error inserting URL:', error);
-    }
-};
+        console.log('SQL:', sql); // Debug log for SQL query
+        console.log('Values:', values); // Debug log for query values
 
-// Function to crawl URLs
-const crawlUrls = async () => {
-    try {
-        const [urls] = await connection.query('SELECT * FROM robotUrl WHERE crawled = "no" ORDER BY pos LIMIT 1');
+        const [rows] = await connection.query(sql, values);
 
-        for (const { url: nextUrl } of urls) {
-            console.log(`Crawling URL: ${nextUrl}`);
-            const html = await fetchHtml(nextUrl);
+        console.log('Rows:', rows); // Debug log for rows returned
 
-            if (html) {
-                const root = parse(html);
-                const { keywords, description } = extractKeywordsAndDescription(root);
-                console.log('Extracted Keywords:', keywords);
-                console.log('Extracted Description:', description);
+        if (rows.length === 0) {
+            return res.json({ query, urls: [] }); // Return empty if no rows found
+        }
 
-                // Store the URL description in the database
-                await connection.query('INSERT INTO urlDescription (url, description) VALUES (?, ?) ON DUPLICATE KEY UPDATE description = ?', [nextUrl, description, description]);
-
-                // Rank the keywords and store them in the database
-                for (const keyword of keywords) {
-                    const rank = countOccurrences(html, keyword); // Use countOccurrences to get rank
-                    await connection.query('INSERT INTO urlKeyword (url, keyword, `rank`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `rank` = ?', [nextUrl, keyword, rank, rank]);
-                    console.log(`Inserted keyword: ${keyword}, Rank: ${rank}`);
+        const results = await Promise.all(
+            rows.map(async ({ url, description, totalRank }) => {
+                // Count occurrences for all phrases
+                for (const cleanPhrase of phrases) {
+                    if (description.includes(cleanPhrase)) {
+                        // Fetch the content from the URL
+                        const pageContent = await fetchHtmlWithPlaywright(url);
+                        if (pageContent) {
+                            totalRank += countExactPhrase(pageContent, cleanPhrase);
+                        }
+                    }
                 }
 
-                // Update the crawled status in the robotUrl table
-                await connection.query('UPDATE robotUrl SET crawled = "yes" WHERE url = ?', [nextUrl]);
-            }
-        }
+                // Count occurrences for individual keywords found in the description or fetched content
+                keywords.forEach(keyword => {
+                    if (description.includes(keyword)) {
+                        totalRank += 1; // Adjust this logic based on your ranking criteria
+                    }
+                });
+
+                return { url, description, rank: totalRank };
+            })
+        );
+
+        // Filter unique URLs and sort by rank
+        const uniqueResults = Array.from(new Set(results.map(r => r.url)))
+            .map(url => results.find(r => r.url === url));
+
+        const sortedResults = uniqueResults.filter(Boolean).sort((a, b) => b.rank - a.rank);
+
+        res.json({ query, urls: sortedResults });
     } catch (error) {
-        console.error('Error crawling URLs:', error);
+        console.error('Error executing query:', error);
+        res.status(500).json({ error: 'Database query failed.' });
     }
-};
+
+    process.on('exit', async () => {
+        if (browser) await browser.close();
+    });
+});
+
+
+
+
+
+
+
 
 module.exports = router;

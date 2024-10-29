@@ -76,36 +76,27 @@ router.get("/search", async (req, res) => {
     console.log('Phrases:', phrases); // Debug log for phrases
     console.log('Keywords:', keywords); // Debug log for keywords
 
-    if (phrases.length === 0 && keywords.length === 0) {
-        return res.status(400).json({ error: 'No valid keywords or phrases found.' });
+    if (keywords.length === 0) {
+        return res.status(400).json({ error: 'No valid keywords found.' });
     }
 
     try {
         // Build SQL query based on the operator
         const operatorSql = isAndOperation ? 'AND' : 'OR';
         const keywordConditions = keywords.map(() => `keyword LIKE ?`).join(` ${operatorSql} `);
-        let sql = `SELECT urlKeyword.url, urlDescription.description, SUM(urlKeyword.rank) AS totalRank
+
+        // SQL query to get URLs and ranks based on keywords
+        let sql = `SELECT urlKeyword.url, SUM(urlKeyword.rank) AS totalRank
                    FROM urlKeyword
-                   JOIN urlDescription ON urlDescription.url = urlKeyword.url
-                   WHERE ${keywordConditions}`;
-
-        // If there are phrases, include them in the WHERE clause
-        if (phrases.length > 0) {
-            const phraseConditions = phrases.map(() => `description LIKE ?`).join(` ${operatorSql} `);
-            sql += ` AND (${phraseConditions})`;
-        }
-
-        sql += ` GROUP BY urlKeyword.url`;
+                   WHERE ${keywordConditions}
+                   GROUP BY urlKeyword.url`;
 
         // If AND operation, ensure all keywords exist for a single URL
         if (isAndOperation) {
-            sql += ` HAVING COUNT(DISTINCT urlKeyword.keyword) = ?`;
+            sql += ` HAVING COUNT(DISTINCT keyword) = ?`;
         }
 
         const values = [...keywords.map(term => `%${term}%`)];
-        if (phrases.length > 0) {
-            values.push(...phrases.map(term => `%${term}%`));
-        }
         if (isAndOperation) {
             values.push(keywords.length);
         }
@@ -121,27 +112,32 @@ router.get("/search", async (req, res) => {
             return res.json({ query, urls: [] }); // Return empty if no rows found
         }
 
+        // Fetch descriptions for the URLs found
+        const urls = rows.map(row => row.url);
+        const descriptionSql = `SELECT url, description FROM urlDescription WHERE url IN (?)`;
+        const [descriptions] = await connection.query(descriptionSql, [urls]);
+
         const results = await Promise.all(
-            rows.map(async ({ url, description, totalRank }) => {
+            rows.map(async ({ url, totalRank }) => {
+                // Find corresponding description
+                const descriptionObj = descriptions.find(desc => desc.url === url);
+                const description = descriptionObj ? descriptionObj.description : 'No description available';
+
                 // Count occurrences for all phrases
-                for (const cleanPhrase of phrases) {
-                    if (description.includes(cleanPhrase)) {
-                        // Fetch the content from the URL
-                        const pageContent = await fetchHtmlWithPlaywright(url);
-                        if (pageContent) {
-                            totalRank += countExactPhrase(pageContent, cleanPhrase);
-                        }
+                let pageContent = null;
+                if (phrases.length > 0) {
+                    pageContent = await fetchHtmlWithPlaywright(url);
+                }
+
+                // Count occurrences for all phrases in the page content
+                let phraseCount = 0;
+                if (pageContent) {
+                    for (const cleanPhrase of phrases) {
+                        phraseCount += countExactPhrase(pageContent, cleanPhrase);
                     }
                 }
 
-                // Count occurrences for individual keywords found in the description or fetched content
-                keywords.forEach(keyword => {
-                    if (description.includes(keyword)) {
-                        totalRank += 1; // Adjust this logic based on your ranking criteria
-                    }
-                });
-
-                return { url, description, rank: totalRank };
+                return { url, description, rank: totalRank + phraseCount };
             })
         );
 
@@ -161,12 +157,5 @@ router.get("/search", async (req, res) => {
         if (browser) await browser.close();
     });
 });
-
-
-
-
-
-
-
 
 module.exports = router;

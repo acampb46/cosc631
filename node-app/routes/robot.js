@@ -71,19 +71,36 @@ router.get("/search", async (req, res) => {
     const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'"))).map(term => term.replace(/['"]+/g, ''));
 
     try {
-        // SQL to match keywords, with HAVING clause for AND operation
-        const keywordConditions = keywords.map(() => "keyword LIKE ?").join(isAndOperation ? " OR " : " OR ");
-        const keywordValues = keywords.map(term => `%${term}%`);
-
-        let sqlQuery = `SELECT url, SUM(\`rank\`) AS totalRank FROM urlKeyword WHERE ${keywordConditions} GROUP BY url`;
-
-        // For AND, ensure URLs contain all keywords using HAVING clause
+        let sqlQuery;
+        let values = [];
+        
         if (isAndOperation) {
-            sqlQuery += ` HAVING COUNT(DISTINCT keyword) = ?`;
-            keywordValues.push(keywords.length);
+            // AND Logic: URLs must contain all keywords
+            const keywordConditions = keywords.map(() => "keyword LIKE ?").join(" OR ");
+            values = keywords.map(term => `%${term}%`);
+            sqlQuery = `
+                SELECT url, COUNT(DISTINCT keyword) AS keywordCount, SUM(\`rank\`) AS totalRank
+                FROM urlKeyword
+                WHERE ${keywordConditions}
+                GROUP BY url
+                HAVING keywordCount = ?
+            `;
+            values.push(keywords.length);  // Ensure all keywords are present
+            console.log("Executing AND query:", sqlQuery, values);
+        } else {
+            // OR Logic: URLs may contain any keyword
+            const keywordConditions = keywords.map(() => "keyword LIKE ?").join(" OR ");
+            values = keywords.map(term => `%${term}%`);
+            sqlQuery = `
+                SELECT url, SUM(\`rank\`) AS totalRank
+                FROM urlKeyword
+                WHERE ${keywordConditions}
+                GROUP BY url
+            `;
+            console.log("Executing OR query:", sqlQuery, values);
         }
 
-        const [keywordResults] = await connection.query(sqlQuery, keywordValues);
+        const [keywordResults] = await connection.query(sqlQuery, values);
 
         // Process results, handling any exact phrase matching
         const results = await Promise.all(
@@ -110,6 +127,7 @@ router.get("/search", async (req, res) => {
         );
 
         const sortedResults = results.filter(Boolean).sort((a, b) => b.rank - a.rank);
+        console.log("Final results:", sortedResults);
         res.json({ query, urls: sortedResults });
     } catch (error) {
         console.error('Error executing query:', error);

@@ -71,28 +71,21 @@ router.get("/search", async (req, res) => {
     const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'"))).map(term => term.replace(/['"]+/g, ''));
 
     try {
-        // Build SQL for keyword matching based on the AND or OR condition
-        let keywordSql = `SELECT url, SUM(\`rank\`) AS totalRank FROM urlKeyword`;
-        const keywordConditions = keywords.map(() => `keyword LIKE ?`).join(isAndOperation ? ' AND ' : ' OR ');
-        
-        if (keywordConditions) {
-            keywordSql += ` WHERE ${keywordConditions} GROUP BY url`;
-            if (isAndOperation) {
-                keywordSql += ` HAVING COUNT(DISTINCT keyword) = ?`;
-            }
-        }
-
+        // Build SQL for keyword matching
+        const keywordConditions = keywords.map(() => "keyword LIKE ?").join(isAndOperation ? " AND " : " OR ");
         const keywordValues = keywords.map(term => `%${term}%`);
+
+        let sqlQuery = `SELECT url, SUM(\`rank\`) AS totalRank FROM urlKeyword WHERE ${keywordConditions} GROUP BY url`;
+
+        // For AND, ensure all keywords are present using HAVING clause
         if (isAndOperation) {
+            sqlQuery += ` HAVING COUNT(DISTINCT keyword) = ?`;
             keywordValues.push(keywords.length);
         }
 
-        console.log('Keyword SQL:', keywordSql);
-        console.log('Keyword Values:', keywordValues);
+        const [keywordResults] = await connection.query(sqlQuery, keywordValues);
 
-        const [keywordResults] = await connection.query(keywordSql, keywordValues);
-
-        // If there are phrases, fetch content and count occurrences
+        // Process results, handling any exact phrase matching
         const results = await Promise.all(
             keywordResults.map(async ({ url, totalRank }) => {
                 let totalRankWithPhrases = totalRank;

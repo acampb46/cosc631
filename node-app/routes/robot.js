@@ -61,8 +61,8 @@ function countExactPhrase(content, phrase) {
 
 // Search route
 router.get("/search", async (req, res) => {
-    const { query, operator } = req.query;
-    const isAndOperation = operator === "AND";
+    const { query, operator } = req.query;  // Ensure you're receiving the operator from the query params
+    const isAndOperation = operator === "AND";  // Determine if AND operation is selected
 
     if (!query) {
         return res.status(400).json({ error: 'Query parameter is required.' });
@@ -161,6 +161,7 @@ router.get("/search", async (req, res) => {
         if (browser) await browser.close();
     });
 });
+
 
 
 

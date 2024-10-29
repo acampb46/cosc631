@@ -114,7 +114,6 @@ router.get("/search", async (req, res) => {
             const phraseResults = await Promise.all(
                 urls.map(async ({ url, rank }) => {
                     const pageContent = await fetchHtmlWithPlaywright(url);
-                    if (browser) await browser.close();
                     let phraseCount = 0;
                     if (pageContent) {
                         phrases.forEach(phrase => {

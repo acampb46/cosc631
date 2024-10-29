@@ -230,5 +230,4 @@ const crawlUrls = async () => {
     }
 };
 
-// Set an interval to crawl URLs every hour (3600000 ms)
-setInterval(crawlUrls, 3600000);
+module.exports = router;

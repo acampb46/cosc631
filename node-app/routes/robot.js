@@ -37,14 +37,11 @@ initializeDatabase().catch(err => {
 });
 
 // Function to fetch HTML with Playwright for phrase-based matching
-const fetchHtmlWithPlaywright = async (url, retries = 3) => {
-    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
+const fetchHtmlWithPlaywright = async (url) => {
     try {
         const browser = await getBrowser();
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: 'load', timeout: 60000 });
-        await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 4000 + 1000)));
         const content = await page.content();
         await page.close();
         return content;
@@ -68,52 +65,62 @@ router.get("/search", async (req, res) => {
         return res.status(400).json({ error: 'Query parameter is required.' });
     }
 
-    // Extract keywords and phrases
+    // Extract keywords and exact phrases
     const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
-    const keywords = searchTerms.map(term => term.replace(/['"]+/g, ''));
-
-    const placeholders = keywords.map(() => "keyword LIKE ?").join(isAndOperation ? " AND " : " OR ");
-    const values = keywords.map(term => `%${term}%`);
+    const phrases = searchTerms.filter(term => term.startsWith('"') || term.startsWith("'")).map(term => term.replace(/['"]+/g, ''));
+    const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'"))).map(term => term.replace(/['"]+/g, ''));
 
     try {
-        const [rows] = await connection.query(
-            `SELECT urlKeyword.url, urlKeyword.keyword, urlKeyword.rank, urlDescription.description
-             FROM urlKeyword
-             JOIN urlDescription ON urlDescription.url = urlKeyword.url
-             WHERE ${placeholders}`,
-            values
-        );
+        // Build SQL for keyword matching based on the AND or OR condition
+        let keywordSql = `SELECT url, SUM(\`rank\`) AS totalRank FROM urlKeyword`;
+        const keywordConditions = keywords.map(() => `keyword LIKE ?`).join(isAndOperation ? ' AND ' : ' OR ');
+        
+        if (keywordConditions) {
+            keywordSql += ` WHERE ${keywordConditions} GROUP BY url`;
+            if (isAndOperation) {
+                keywordSql += ` HAVING COUNT(DISTINCT keyword) = ?`;
+            }
+        }
 
+        const keywordValues = keywords.map(term => `%${term}%`);
+        if (isAndOperation) {
+            keywordValues.push(keywords.length);
+        }
+
+        console.log('Keyword SQL:', keywordSql);
+        console.log('Keyword Values:', keywordValues);
+
+        const [keywordResults] = await connection.query(keywordSql, keywordValues);
+
+        // If there are phrases, fetch content and count occurrences
         const results = await Promise.all(
-            rows.map(async ({ url, keyword, rank, description }) => {
-                let totalRank = rank;
+            keywordResults.map(async ({ url, totalRank }) => {
+                let totalRankWithPhrases = totalRank;
 
-                // Check if term is an exact phrase requiring a page fetch
-                const exactPhraseMatch = searchTerms.find(term => term.startsWith('"') || term.startsWith("'"));
-                if (exactPhraseMatch) {
+                // If there are phrases, ensure they appear in content
+                for (const phrase of phrases) {
                     const pageContent = await fetchHtmlWithPlaywright(url);
                     if (pageContent) {
-                        totalRank += countExactPhrase(pageContent, exactPhraseMatch.replace(/['"]+/g, ''));
+                        totalRankWithPhrases += countExactPhrase(pageContent, phrase);
                     }
-                } else {
-                    // If no phrase, add database rank directly
-                    keywords.forEach(term => {
-                        if (description.includes(term) || keyword.includes(term)) {
-                            totalRank += rank;
-                        }
-                    });
                 }
 
-                return { url, description, rank: totalRank };
+                // Fetch the description for display only, not for keyword matching
+                const [descriptionRow] = await connection.query(
+                    `SELECT description FROM urlDescription WHERE url = ? LIMIT 1`,
+                    [url]
+                );
+                const description = descriptionRow.length ? descriptionRow[0].description : '';
+
+                return { url, description, rank: totalRankWithPhrases };
             })
         );
 
         const sortedResults = results.filter(Boolean).sort((a, b) => b.rank - a.rank);
-
         res.json({ query, urls: sortedResults });
     } catch (error) {
         console.error('Error executing query:', error);
-        res.status(500).json({ error: 'Database query failed.' });
+        res.status(500).json({ error: 'Database query failed.', details: error.message });
     }
 
     process.on('exit', async () => {

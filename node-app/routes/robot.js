@@ -61,8 +61,8 @@ function countExactPhrase(content, phrase) {
 
 // Search route
 router.get("/search", async (req, res) => {
-    const { query, operator } = req.query;  // Ensure you're receiving the operator from the query params
-    const isAndOperation = operator === "AND";  // Determine if AND operation is selected
+    const { query, operator } = req.query;
+    const isAndOperation = operator === "AND";
 
     if (!query) {
         return res.status(400).json({ error: 'Query parameter is required.' });
@@ -81,73 +81,60 @@ router.get("/search", async (req, res) => {
     }
 
     try {
-        // Build SQL query based on the operator
-        const operatorSql = isAndOperation ? 'AND' : 'OR';
-        const keywordConditions = keywords.map(() => `keyword LIKE ?`).join(` ${operatorSql} `);
+        // Step 1: Search for keywords
+        const keywordConditions = keywords.map(() => `keyword LIKE ?`).join(isAndOperation ? ' AND ' : ' OR ');
+        const keywordSql = `SELECT url, SUM(rank) AS totalRank
+                            FROM urlKeyword
+                            WHERE ${keywordConditions}
+                            GROUP BY url`;
+        const keywordValues = keywords.map(term => `%${term}%`);
 
-        // SQL query to get URLs and ranks based on keywords
-        let sql = `SELECT urlKeyword.url, SUM(urlKeyword.rank) AS totalRank
-                   FROM urlKeyword
-                   WHERE ${keywordConditions}
-                   GROUP BY urlKeyword.url`;
+        const [keywordResults] = await connection.query(keywordSql, keywordValues);
 
-        // If AND operation, ensure all keywords exist for a single URL
+        // Filter results based on the operator
+        let urls = [];
         if (isAndOperation) {
-            sql += ` HAVING COUNT(DISTINCT keyword) = ?`;
+            // Filter URLs that have all keywords
+            urls = keywordResults.filter(row => row.totalRank === keywords.length).map(row => ({ url: row.url, rank: row.totalRank }));
+        } else {
+            // Include URLs with any keyword matches
+            urls = keywordResults.map(row => ({ url: row.url, rank: row.totalRank }));
         }
 
-        const values = [...keywords.map(term => `%${term}%`)];
-        if (isAndOperation) {
-            values.push(keywords.length);
-        }
-
-        console.log('SQL:', sql); // Debug log for SQL query
-        console.log('Values:', values); // Debug log for query values
-
-        const [rows] = await connection.query(sql, values);
-
-        console.log('Rows:', rows); // Debug log for rows returned
-
-        if (rows.length === 0) {
-            return res.json({ query, urls: [] }); // Return empty if no rows found
-        }
-
-        // Fetch descriptions for the URLs found
-        const urls = rows.map(row => row.url);
-        const descriptionSql = `SELECT url, description FROM urlDescription WHERE url IN (?)`;
-        const [descriptions] = await connection.query(descriptionSql, [urls]);
-
-        const results = await Promise.all(
-            rows.map(async ({ url, totalRank }) => {
-                // Find corresponding description
-                const descriptionObj = descriptions.find(desc => desc.url === url);
-                const description = descriptionObj ? descriptionObj.description : 'No description available';
-
-                // Count occurrences for all phrases
-                let pageContent = null;
-                if (phrases.length > 0) {
-                    pageContent = await fetchHtmlWithPlaywright(url);
-                }
-
-                // Count occurrences for all phrases in the page content
-                let phraseCount = 0;
-                if (pageContent) {
-                    for (const cleanPhrase of phrases) {
-                        phraseCount += countExactPhrase(pageContent, cleanPhrase);
+        // Step 2: Phrase handling (if any phrases)
+        if (phrases.length > 0) {
+            const phraseResults = await Promise.all(
+                urls.map(async ({ url, rank }) => {
+                    const pageContent = await fetchHtmlWithPlaywright(url);
+                    let phraseCount = 0;
+                    if (pageContent) {
+                        phrases.forEach(phrase => {
+                            phraseCount += countExactPhrase(pageContent, phrase);
+                        });
                     }
-                }
+                    return { url, rank: rank + phraseCount };
+                })
+            );
 
-                return { url, description, rank: totalRank + phraseCount };
-            })
-        );
+            urls = phraseResults;
+        }
 
-        // Filter unique URLs and sort by rank
-        const uniqueResults = Array.from(new Set(results.map(r => r.url)))
-            .map(url => results.find(r => r.url === url));
+        // Step 3: Fetch descriptions for URLs
+        const descriptionSql = `SELECT url, description FROM urlDescription WHERE url IN (?)`;
+        const descriptionUrls = urls.map(result => result.url);
+        const [descriptions] = await connection.query(descriptionSql, [descriptionUrls]);
 
-        const sortedResults = uniqueResults.filter(Boolean).sort((a, b) => b.rank - a.rank);
+        // Step 4: Combine results and send response
+        const results = urls.map(({ url, rank }) => {
+            const descriptionObj = descriptions.find(desc => desc.url === url);
+            const description = descriptionObj ? descriptionObj.description : 'No description available';
+            return { url, description, rank };
+        });
 
-        res.json({ query, urls: sortedResults });
+        // Sort by rank
+        results.sort((a, b) => b.rank - a.rank);
+
+        res.json({ query, urls: results });
     } catch (error) {
         console.error('Error executing query:', error);
         res.status(500).json({ error: 'Database query failed.' });

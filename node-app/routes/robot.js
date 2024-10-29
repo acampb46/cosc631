@@ -70,6 +70,11 @@ router.get("/search", async (req, res) => {
     const phrases = searchTerms.filter(term => term.startsWith('"') || term.startsWith("'")).map(term => term.replace(/['"]+/g, ''));
     const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'"))).map(term => term.replace(/['"]+/g, ''));
 
+    // Ensure keywords are available before running the query
+    if (keywords.length === 0) {
+        return res.json({ message: "no results" });
+    }
+
     try {
         let sqlQuery;
         let values = [];
@@ -147,3 +152,4 @@ router.get("/search", async (req, res) => {
 });
 
 module.exports = router;
+

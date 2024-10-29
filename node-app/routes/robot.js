@@ -68,7 +68,7 @@ router.get("/search", async (req, res) => {
         return res.status(400).json({ error: 'Query parameter is required.' });
     }
 
-    // Extract keywords and phrases
+    // Extract keywords and phrases including those with multiple words
     const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
     const keywords = searchTerms.map(term => term.replace(/['"]+/g, ''));
 
@@ -112,16 +112,12 @@ router.get("/search", async (req, res) => {
 
         const results = await Promise.all(
             rows.map(async ({ url, description, totalRank }) => {
-                let matchedExactPhrase = false;
-
                 // Check for exact phrases
                 for (const exactPhraseMatch of searchTerms.filter(term => term.startsWith('"') || term.startsWith("'"))) {
                     const cleanPhrase = exactPhraseMatch.replace(/['"]+/g, '');
 
                     // Ensure the phrase is found in description
                     if (description.includes(cleanPhrase)) {
-                        matchedExactPhrase = true;
-
                         // Fetch the content from the URL
                         const pageContent = await fetchHtmlWithPlaywright(url);
                         if (pageContent) {
@@ -129,6 +125,13 @@ router.get("/search", async (req, res) => {
                         }
                     }
                 }
+
+                // Add counts for individual keywords found in the description or fetched content
+                keywords.forEach(keyword => {
+                    if (description.includes(keyword)) {
+                        totalRank += 1; // Adjust this logic based on your ranking criteria
+                    }
+                });
 
                 return { url, description, rank: totalRank };
             })
@@ -150,6 +153,7 @@ router.get("/search", async (req, res) => {
         if (browser) await browser.close();
     });
 });
+
 
 
 

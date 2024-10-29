@@ -72,32 +72,29 @@ router.get("/search", async (req, res) => {
     const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
     const keywords = searchTerms.map(term => term.replace(/['"]+/g, ''));
 
-    // Create SQL placeholders for the keywords
-    const placeholders = keywords.map(() => "keyword LIKE ?").join(isAndOperation ? " AND " : " OR ");
-    const values = keywords.map(term => `%${term}%`);
-
     try {
-        const [rows] = await connection.query(
-            `SELECT urlKeyword.url, urlKeyword.keyword, urlKeyword.rank, urlDescription.description
-             FROM urlKeyword
-             JOIN urlDescription ON urlDescription.url = urlKeyword.url
-             WHERE ${placeholders}
-             GROUP BY urlKeyword.url
-             HAVING COUNT(DISTINCT keyword) = ?`,
-            [...values, keywords.length]
-        );
+        // If AND operation, use a subquery to ensure all keywords exist for a single URL
+        let sql = `SELECT urlKeyword.url, urlDescription.description, SUM(urlKeyword.rank) AS totalRank
+                   FROM urlKeyword
+                   JOIN urlDescription ON urlDescription.url = urlKeyword.url
+                   WHERE ${keywords.map((_, index) => `keyword LIKE ?`).join(' AND ')}
+                   GROUP BY urlKeyword.url
+                   HAVING COUNT(DISTINCT urlKeyword.keyword) = ?`;
+
+        const values = [...keywords.map(term => `%${term}%`), keywords.length];
+
+        const [rows] = await connection.query(sql, values);
 
         const results = await Promise.all(
-            rows.map(async ({ url, keyword, rank, description }) => {
-                let totalRank = rank;
+            rows.map(async ({ url, description, totalRank }) => {
                 let matchedExactPhrase = false;
 
                 // Check for exact phrases
                 for (const exactPhraseMatch of searchTerms.filter(term => term.startsWith('"') || term.startsWith("'"))) {
                     const cleanPhrase = exactPhraseMatch.replace(/['"]+/g, '');
 
-                    // Ensure the phrase is found in either `keyword` or `description`
-                    if (description.includes(cleanPhrase) || keyword.includes(cleanPhrase)) {
+                    // Ensure the phrase is found in description
+                    if (description.includes(cleanPhrase)) {
                         matchedExactPhrase = true;
 
                         // Fetch the content from the URL
@@ -106,15 +103,6 @@ router.get("/search", async (req, res) => {
                             totalRank += countExactPhrase(pageContent, cleanPhrase);
                         }
                     }
-                }
-
-                // If no exact phrase is matched but keywords match, still calculate the total rank based on keywords
-                if (!matchedExactPhrase) {
-                    keywords.forEach(term => {
-                        if (description.includes(term) || keyword.includes(term)) {
-                            totalRank += rank;
-                        }
-                    });
                 }
 
                 return { url, description, rank: totalRank };
@@ -137,6 +125,7 @@ router.get("/search", async (req, res) => {
         if (browser) await browser.close();
     });
 });
+
 
 
 module.exports = router;

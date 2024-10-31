@@ -82,7 +82,7 @@ router.get("/search", async (req, res) => {
         
         if (isAndOperation) {
             // AND Logic: URLs must contain all keywords
-            const keywordConditions = keywords.map(() => "keyword LIKE ?").join(" AND ");
+            const keywordConditions = keywords.map(() => "keyword LIKE ?").join(" OR ");
             values = keywords.map(term => `%${term}%`);
             sqlQuery = `
                 SELECT url, COUNT(DISTINCT keyword) AS keywordCount, SUM(\`rank\`) AS totalRank

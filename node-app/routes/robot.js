@@ -16,10 +16,12 @@ let browser;
 (async () => {
     chromium.use(stealth);
     browser = await chromium.launch({ headless: true });
+    console.log("Browser launched successfully");
 })();
 
 async function getBrowser() {
     if (!browser || browser.isConnected() === false) {
+        console.log("Launching a new browser instance...");
         browser = await chromium.launch({ headless: true });
     }
     return browser;
@@ -41,6 +43,7 @@ const fetchHtmlWithPlaywright = async (url) => {
     try {
         const browser = await getBrowser();
         const page = await browser.newPage();
+        console.log(`Navigating to URL: ${url}`);
         await page.goto(url, { waitUntil: 'load', timeout: 60000 });
         const content = await page.content();
         await page.close();
@@ -53,12 +56,16 @@ const fetchHtmlWithPlaywright = async (url) => {
 // Function to calculate occurrences of exact phrases
 function countExactPhrase(content, phrase) {
     const regex = new RegExp(`\\b${phrase}\\b`, 'gi');
-    return (content.match(regex) || []).length;
+    const matchCount = (content.match(regex) || []).length;
+    console.log(`Phrase "${phrase}" found ${matchCount} times`);
+    return matchCount;
 }
 
 // Search route
 router.get("/search", async (req, res) => {
     const { query, operator } = req.query;
+    console.log("Search query received:", query);
+    console.log("Operator selected:", operator);
 
     if (!query) {
         return res.status(400).json({ error: 'Query parameter is required.' });
@@ -70,9 +77,12 @@ router.get("/search", async (req, res) => {
         .map(term => term.replace(/['"]+/g, ''));
     const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'")))
         .map(term => term.replace(/['"]+/g, ''));
-    const isAndOperation = operator === "AND" || (phrases.length > 0); // Treat phrases as AND operations
+    const isAndOperation = operator === "AND" || (phrases.length > 0);
 
-    // Ensure keywords are available before running the query
+    console.log("Keywords extracted:", keywords);
+    console.log("Phrases extracted:", phrases);
+    console.log("Using AND operation:", isAndOperation);
+
     if (keywords.length === 0) {
         return res.json({ message: "no results" });
     }
@@ -82,7 +92,6 @@ router.get("/search", async (req, res) => {
         let values = [];
 
         if (isAndOperation) {
-            // AND Logic: URLs must contain all keywords
             const keywordConditions = keywords.map(() => "keyword LIKE ?").join(" OR ");
             values = keywords.map(term => `%${term}%`);
             sqlQuery = `
@@ -92,9 +101,9 @@ router.get("/search", async (req, res) => {
                 GROUP BY url
                 HAVING keywordCount = ?
             `;
-            values.push(keywords.length);  // Ensure all keywords are present
+            values.push(keywords.length);
+            console.log("Executing AND query:", sqlQuery, values);
         } else {
-            // OR Logic: URLs may contain any keyword
             const keywordConditions = keywords.map(() => "keyword LIKE ?").join(" OR ");
             values = keywords.map(term => `%${term}%`);
             sqlQuery = `
@@ -103,21 +112,22 @@ router.get("/search", async (req, res) => {
                 WHERE ${keywordConditions}
                 GROUP BY url
             `;
+            console.log("Executing OR query:", sqlQuery, values);
         }
 
         const [keywordResults] = await connection.query(sqlQuery, values);
+        console.log("Keyword results:", keywordResults);
 
         if (keywordResults.length === 0) {
-            // No results found
+            console.log("No results found for query:", query);
             return res.json({ message: "no results" });
         }
 
-        // Process results, handling exact phrase matching if necessary
         const results = await Promise.all(
             keywordResults.map(async ({ url, totalRank }) => {
                 let finalRank = totalRank;
+                console.log(`Processing URL: ${url}, initial rank: ${totalRank}`);
 
-                // If phrases are present, fetch content and calculate exact phrase rank
                 if (phrases.length > 0) {
                     const pageContent = await fetchHtmlWithPlaywright(url);
                     if (pageContent) {
@@ -126,25 +136,28 @@ router.get("/search", async (req, res) => {
                             phraseRank += countExactPhrase(pageContent, phrase);
                         }
 
-                        // Only use the phrase rank if phrases are found
                         if (phraseRank > 0) {
+                            console.log(`Phrase rank for URL ${url}: ${phraseRank}`);
                             finalRank = phraseRank;
                         }
+                    } else {
+                        console.log(`No content found for URL ${url}`);
                     }
                 }
 
-                // Fetch the description for display only, not for keyword matching
                 const [descriptionRow] = await connection.query(
                     `SELECT description FROM urlDescription WHERE url = ? LIMIT 1`,
                     [url]
                 );
                 const description = descriptionRow.length ? descriptionRow[0].description : '';
+                console.log(`URL: ${url}, final rank: ${finalRank}, description: ${description}`);
 
                 return { url, description, rank: finalRank };
             })
         );
 
         const sortedResults = results.filter(Boolean).sort((a, b) => b.rank - a.rank);
+        console.log("Final sorted results:", sortedResults);
 
         res.json({ query, urls: sortedResults });
     } catch (error) {

@@ -56,8 +56,10 @@ function countExactPhrase(content, phrase) {
     return (content.match(regex) || []).length;
 }
 
+// Search route
 router.get("/search", async (req, res) => {
     const { query, operator } = req.query;
+    const isAndOperation = operator === "AND";
 
     if (!query) {
         return res.status(400).json({ error: 'Query parameter is required.' });
@@ -65,12 +67,8 @@ router.get("/search", async (req, res) => {
 
     // Extract keywords and exact phrases
     const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
-    const phrases = searchTerms.filter(term => term.startsWith('"') || term.startsWith("'"))
-        .map(term => term.replace(/['"]+/g, ''));
-    const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'")))
-        .concat(phrases.flatMap(phrase => phrase.split(/\s+/))) // tokenize phrases into keywords
-        .map(term => term.replace(/['"]+/g, ''));
-    const isAndOperation = operator === "AND" || (phrases.length > 0); // treat phrases as AND operations
+    const phrases = searchTerms.filter(term => term.startsWith('"') || term.startsWith("'")).map(term => term.replace(/['"]+/g, ''));
+    const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'"))).map(term => term.replace(/['"]+/g, ''));
 
     // Ensure keywords are available before running the query
     if (keywords.length === 0) {
@@ -82,7 +80,7 @@ router.get("/search", async (req, res) => {
         let values = [];
 
         if (isAndOperation) {
-            // Treat as AND query: URLs must contain all keywords
+            // AND Logic: URLs must contain all keywords
             const keywordConditions = keywords.map(() => "keyword LIKE ?").join(" OR ");
             values = keywords.map(term => `%${term}%`);
             sqlQuery = `
@@ -93,7 +91,6 @@ router.get("/search", async (req, res) => {
                 HAVING keywordCount = ?
             `;
             values.push(keywords.length);  // Ensure all keywords are present
-            console.log("Executing AND query:", sqlQuery, values);
         } else {
             // OR Logic: URLs may contain any keyword
             const keywordConditions = keywords.map(() => "keyword LIKE ?").join(" OR ");
@@ -104,26 +101,32 @@ router.get("/search", async (req, res) => {
                 WHERE ${keywordConditions}
                 GROUP BY url
             `;
-            console.log("Executing OR query:", sqlQuery, values);
         }
 
         const [keywordResults] = await connection.query(sqlQuery, values);
 
         if (keywordResults.length === 0) {
-            console.log("No results found for query:", query);
+            // No results found
             return res.json({ message: "no results" });
         }
 
-        // Process results, handling any exact phrase matching
+        // Process results, handling exact phrase matching if necessary
         const results = await Promise.all(
             keywordResults.map(async ({ url, totalRank }) => {
-                let totalRankWithPhrases = totalRank;
+                let finalRank = totalRank;
 
+                // If phrases are present, fetch content and calculate exact phrase rank
                 if (phrases.length > 0) {
                     const pageContent = await fetchHtmlWithPlaywright(url);
                     if (pageContent) {
+                        let phraseRank = 0;
                         for (const phrase of phrases) {
-                            totalRankWithPhrases += countExactPhrase(pageContent, phrase);
+                            phraseRank += countExactPhrase(pageContent, phrase);
+                        }
+
+                        // Only use the phrase rank if phrases are found
+                        if (phraseRank > 0) {
+                            finalRank = phraseRank;
                         }
                     }
                 }
@@ -135,12 +138,11 @@ router.get("/search", async (req, res) => {
                 );
                 const description = descriptionRow.length ? descriptionRow[0].description : '';
 
-                return { url, description, rank: totalRankWithPhrases };
+                return { url, description, rank: finalRank };
             })
         );
 
         const sortedResults = results.filter(Boolean).sort((a, b) => b.rank - a.rank);
-        console.log("Final results:", sortedResults);
 
         res.json({ query, urls: sortedResults });
     } catch (error) {
@@ -153,6 +155,4 @@ router.get("/search", async (req, res) => {
     });
 });
 
-
 module.exports = router;
-

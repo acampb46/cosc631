@@ -38,6 +38,11 @@ initializeDatabase().catch(err => {
     console.error('Failed to connect to the database:', err);
 });
 
+// Tokenize phrases into individual words
+const tokenizePhrases = (phrases) => {
+    return phrases.flatMap(phrase => phrase.split(/\s+/));
+};
+
 // Function to fetch HTML with Playwright for phrase-based matching
 const fetchHtmlWithPlaywright = async (url) => {
     try {
@@ -77,13 +82,16 @@ router.get("/search", async (req, res) => {
         .map(term => term.replace(/['"]+/g, ''));
     const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'")))
         .map(term => term.replace(/['"]+/g, ''));
+
+    // Add tokenized phrases to keywords list for SQL search
+    const allKeywords = [...keywords, ...tokenizePhrases(phrases)];
     const isAndOperation = operator === "AND" || (phrases.length > 0);
 
-    console.log("Keywords extracted:", keywords);
+    console.log("Keywords extracted:", allKeywords);
     console.log("Phrases extracted:", phrases);
     console.log("Using AND operation:", isAndOperation);
 
-    if (keywords.length === 0) {
+    if (allKeywords.length === 0) {
         return res.json({ message: "no results" });
     }
 
@@ -92,8 +100,8 @@ router.get("/search", async (req, res) => {
         let values = [];
 
         if (isAndOperation) {
-            const keywordConditions = keywords.map(() => "keyword LIKE ?").join(" OR ");
-            values = keywords.map(term => `%${term}%`);
+            const keywordConditions = allKeywords.map(() => "keyword LIKE ?").join(" OR ");
+            values = allKeywords.map(term => `%${term}%`);
             sqlQuery = `
                 SELECT url, COUNT(DISTINCT keyword) AS keywordCount, SUM(\`rank\`) AS totalRank
                 FROM urlKeyword
@@ -101,11 +109,11 @@ router.get("/search", async (req, res) => {
                 GROUP BY url
                 HAVING keywordCount = ?
             `;
-            values.push(keywords.length);
+            values.push(allKeywords.length);  // Ensure all keywords are present
             console.log("Executing AND query:", sqlQuery, values);
         } else {
-            const keywordConditions = keywords.map(() => "keyword LIKE ?").join(" OR ");
-            values = keywords.map(term => `%${term}%`);
+            const keywordConditions = allKeywords.map(() => "keyword LIKE ?").join(" OR ");
+            values = allKeywords.map(term => `%${term}%`);
             sqlQuery = `
                 SELECT url, SUM(\`rank\`) AS totalRank
                 FROM urlKeyword

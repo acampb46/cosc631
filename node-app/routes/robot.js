@@ -56,11 +56,8 @@ function countExactPhrase(content, phrase) {
     return (content.match(regex) || []).length;
 }
 
-// Search route
 router.get("/search", async (req, res) => {
     const { query, operator } = req.query;
-    console.log("Operator selected:", operator);
-    const isAndOperation = operator === "AND";
 
     if (!query) {
         return res.status(400).json({ error: 'Query parameter is required.' });
@@ -70,6 +67,7 @@ router.get("/search", async (req, res) => {
     const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
     const phrases = searchTerms.filter(term => term.startsWith('"') || term.startsWith("'")).map(term => term.replace(/['"]+/g, ''));
     const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'"))).map(term => term.replace(/['"]+/g, ''));
+    const isAndOperation = operator === "AND" || (phrases.length > 0); // treat phrases as AND operations
 
     // Ensure keywords are available before running the query
     if (keywords.length === 0) {
@@ -79,9 +77,9 @@ router.get("/search", async (req, res) => {
     try {
         let sqlQuery;
         let values = [];
-        
+
         if (isAndOperation) {
-            // AND Logic: URLs must contain all keywords
+            // Treat as AND query: URLs must contain all keywords
             const keywordConditions = keywords.map(() => "keyword LIKE ?").join(" OR ");
             values = keywords.map(term => `%${term}%`);
             sqlQuery = `
@@ -109,7 +107,6 @@ router.get("/search", async (req, res) => {
         const [keywordResults] = await connection.query(sqlQuery, values);
 
         if (keywordResults.length === 0) {
-            // No results found
             console.log("No results found for query:", query);
             return res.json({ message: "no results" });
         }
@@ -119,11 +116,12 @@ router.get("/search", async (req, res) => {
             keywordResults.map(async ({ url, totalRank }) => {
                 let totalRankWithPhrases = totalRank;
 
-                // If there are phrases, ensure they appear in content
-                for (const phrase of phrases) {
+                if (phrases.length > 0) {
                     const pageContent = await fetchHtmlWithPlaywright(url);
                     if (pageContent) {
-                        totalRankWithPhrases += countExactPhrase(pageContent, phrase);
+                        for (const phrase of phrases) {
+                            totalRankWithPhrases += countExactPhrase(pageContent, phrase);
+                        }
                     }
                 }
 
@@ -151,6 +149,7 @@ router.get("/search", async (req, res) => {
         if (browser) await browser.close();
     });
 });
+
 
 module.exports = router;
 

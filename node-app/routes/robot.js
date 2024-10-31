@@ -59,6 +59,7 @@ function countExactPhrase(content, phrase) {
 // Search route
 router.get("/search", async (req, res) => {
     const { query, operator } = req.query;
+    console.log("Operator selected:", operator);
     const isAndOperation = operator === "AND";
 
     if (!query) {

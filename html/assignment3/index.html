@@ -32,13 +32,11 @@
 <h1>Custom Search Engine</h1>
 
 <form id="searchForm">
-    <input type="text" id="searchQuery" placeholder="Enter keywords or phrases..." required>
-    <label>
-        <input type="radio" name="operation" value="OR" checked> OR
-    </label>
-    <label>
-        <input type="radio" name="operation" value="AND"> AND
-    </label>
+    <input type="radio" name="operator" value="AND" id="and" checked>
+    <label for="and">AND</label>
+    <input type="radio" name="operator" value="OR" id="or">
+    <label for="or">OR</label>
+    <input type="text" name="query" placeholder="Search">
     <button type="submit">Search</button>
 </form>
 

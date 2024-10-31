@@ -59,7 +59,6 @@ function countExactPhrase(content, phrase) {
 // Search route
 router.get("/search", async (req, res) => {
     const { query, operator } = req.query;
-    const isAndOperation = operator === "AND";
 
     if (!query) {
         return res.status(400).json({ error: 'Query parameter is required.' });
@@ -67,8 +66,11 @@ router.get("/search", async (req, res) => {
 
     // Extract keywords and exact phrases
     const searchTerms = query.match(/"[^"]+"|'[^']+'|\S+/g) || [];
-    const phrases = searchTerms.filter(term => term.startsWith('"') || term.startsWith("'")).map(term => term.replace(/['"]+/g, ''));
-    const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'"))).map(term => term.replace(/['"]+/g, ''));
+    const phrases = searchTerms.filter(term => term.startsWith('"') || term.startsWith("'"))
+        .map(term => term.replace(/['"]+/g, ''));
+    const keywords = searchTerms.filter(term => !(term.startsWith('"') || term.startsWith("'")))
+        .map(term => term.replace(/['"]+/g, ''));
+    const isAndOperation = operator === "AND" || (phrases.length > 0); // Treat phrases as AND operations
 
     // Ensure keywords are available before running the query
     if (keywords.length === 0) {

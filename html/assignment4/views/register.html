@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header>
+    <h1>Register</h1>
+</header>
+
+<main>
+    <form id="register-form">
+        <label for="name">Full Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="phone">Phone Number:</label>
+        <input type="text" id="phone" name="phone" required>
+
+        <label for="address">Address:</label>
+        <textarea id="address" name="address" required></textarea>
+
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+
+        <label for="payment-info">Payment Information:</label>
+        <textarea id="payment-info" name="payment-info" required></textarea>
+
+        <button type="submit">Register</button>
+    </form>
+</main>
+
+<footer>
+    <p>&copy; 2024 Auction Site</p>
+</footer>
+
+<script>
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = {
+            name: document.getElementById('name').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            address: document.getElementById('address').value,
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+            paymentInfo: document.getElementById('payment-info').value,
+        };
+
+        const response = await fetch('/users/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
+            alert('Registration successful!');
+            window.location.href = '/login.html';
+        } else {
+            const errorData = await response.json();
+            alert(`Registration failed: ${errorData.message}`);
+        }
+    });
+</script>
+</body>
+</html>

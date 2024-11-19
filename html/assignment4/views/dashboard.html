@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/styles.css">
+    <title>Dashboard</title>
+</head>
+<body>
+<h1>Your Dashboard</h1>
+<section>
+    <h2>Your Items</h2>
+    <ul id="user-items"></ul>
+</section>
+<section>
+    <h2>Purchased Items</h2>
+    <ul id="purchased-items"></ul>
+</section>
+
+<form id="search-form">
+    <label for="searchKeyword"></label><input type="text" id="searchKeyword" name="keyword" placeholder="Search items" required>
+    <button type="submit">Search</button>
+</form>
+
+<section id="search-results"></section>
+
+<script>
+    async function fetchData() {
+        const userItems = await fetch('/dashboard/items').then(res => res.json());
+        const purchasedItems = await fetch('/dashboard/purchases').then(res => res.json());
+
+        const userItemsList = document.getElementById('user-items');
+        userItems.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item.title} - Quantity: ${item.quantity}`;
+            userItemsList.appendChild(li);
+        });
+
+        const purchasedItemsList = document.getElementById('purchased-items');
+        purchasedItems.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item.title} - Purchased on: ${item.transaction_date}`;
+            purchasedItemsList.appendChild(li);
+        });
+    }
+
+    fetchData();
+
+    const searchForm = document.getElementById('search-form');
+    const searchResults = document.getElementById('search-results');
+
+    searchForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const keyword = document.getElementById('searchKeyword').value;
+
+        const response = await fetch(`/search?keyword=${encodeURIComponent(keyword)}`);
+        const items = await response.json();
+
+        searchResults.innerHTML = '';
+        if (items.length > 0) {
+            items.forEach((item) => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+          <h3>${item.title}</h3>
+          <p>${item.description}</p>
+          <p>Price: $${item.price}</p>
+        `;
+                searchResults.appendChild(div);
+            });
+        } else {
+            searchResults.textContent = 'No items found.';
+        }
+    });
+</script>
+</body>
+</html>

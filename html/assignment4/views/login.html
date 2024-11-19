@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header>
+    <h1>Login</h1>
+</header>
+
+<main>
+    <form id="login-form">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Login</button>
+    </form>
+</main>
+
+<footer>
+    <p>&copy; 2024 Auction Site</p>
+</footer>
+
+<script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = {
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+        };
+
+        const response = await fetch('/users/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
+            alert('Login successful!');
+            window.location.href = '/dashboard.html';
+        } else {
+            const errorData = await response.json();
+            alert(`Login failed: ${errorData.message}`);
+        }
+    });
+</script>
+</body>
+</html>

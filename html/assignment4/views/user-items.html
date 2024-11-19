@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Items</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header>
+    <h1>Your Items</h1>
+    <a href="dashboard.html">Back to Dashboard</a>
+</header>
+
+<main>
+    <section id="purchased-items">
+        <h2>Purchased Items</h2>
+        <ul id="purchased-list"></ul>
+    </section>
+
+    <section id="bids">
+        <h2>Your Bids</h2>
+        <ul id="bids-list"></ul>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2024 Auction Site</p>
+</footer>
+
+<script>
+    async function fetchUserItems() {
+        const purchasedResponse = await fetch('/user/purchases');
+        const purchasedItems = await purchasedResponse.json();
+        const bidsResponse = await fetch('/user/bids');
+        const bidItems = await bidsResponse.json();
+
+        const purchasedList = document.getElementById('purchased-list');
+        purchasedItems.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item.title} - $${item.total_price}`;
+            purchasedList.appendChild(li);
+        });
+
+        const bidsList = document.getElementById('bids-list');
+        bidItems.forEach(bid => {
+            const li = document.createElement('li');
+            li.textContent = `${bid.title} - Your bid: $${bid.amount}`;
+            bidsList.appendChild(li);
+        });
+    }
+
+    fetchUserItems();
+</script>
+</body>
+</html>

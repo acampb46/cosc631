@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Details</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="../src/socket.js"></script>
+</head>
+<body>
+<header>
+    <h1>Item Details</h1>
+    <a href="/dashboard">Go to Dashboard</a>
+</header>
+
+<main>
+    <!-- Item Information -->
+    <section id="item-info">
+        <h2 id="item-title">Loading...</h2>
+        <p id="item-description">Loading...</p>
+        <p><strong>Price:</strong> $<span id="item-price">0</span></p>
+        <p><strong>Quantity:</strong> <span id="item-quantity">0</span></p>
+        <img id="item-image" src="" alt="Item Image" style="display: none; max-width: 300px;">
+    </section>
+
+    <!-- Bidding Section -->
+    <section id="bidding-section">
+        <h3>Place a Bid</h3>
+        <form id="bid-form">
+            <input type="number" id="bidAmount" name="bidAmount" placeholder="Enter your bid" required>
+            <button type="submit">Place Bid</button>
+        </form>
+        <p><strong>Current Highest Bid:</strong> $<span id="highest-bid">Loading...</span></p>
+    </section>
+
+    <!-- Purchase Section -->
+    <section id="purchase-section">
+        <h3>Buy Now</h3>
+        <form id="buy-form">
+            <input type="number" id="buyQuantity" name="quantity" placeholder="Enter quantity" required>
+            <button type="submit">Buy Now</button>
+        </form>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2024 Auction Site</p>
+</footer>
+
+<script>
+    const itemId = new URLSearchParams(window.location.search).get('id'); // Get item ID from query params
+    const socket = io();
+
+    async function fetchItemDetails() {
+        try {
+            const response = await fetch(`/items/${itemId}`);
+            const item = await response.json();
+
+            // Populate item details
+            document.getElementById('item-title').textContent = item.title;
+            document.getElementById('item-description').textContent = item.description;
+            document.getElementById('item-price').textContent = item.price;
+            document.getElementById('item-quantity').textContent = item.quantity;
+
+            if (item.image_url) {
+                const img = document.getElementById('item-image');
+                img.src = item.image_url;
+                img.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Failed to fetch item details:', error);
+        }
+    }
+
+    async function fetchHighestBid() {
+        try {
+            const response = await fetch(`/bids/highest/${itemId}`);
+            const data = await response.json();
+            document.getElementById('highest-bid').textContent = data.amount ? data.amount : 'No bids yet';
+        } catch (error) {
+            console.error('Failed to fetch highest bid:', error);
+        }
+    }
+
+    document.getElementById('bid-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const bidAmount = document.getElementById('bidAmount').value;
+
+        try {
+            const response = await fetch('/bids/place', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ itemId, bidAmount }),
+            });
+
+            if (response.ok) {
+                alert('Bid placed successfully!');
+            } else {
+                const errorData = await response.json();
+                alert(`Failed to place bid: ${errorData.message}`);
+            }
+        } catch (error) {
+            console.error('Failed to place bid:', error);
+        }
+    });
+
+    const buyForm = document.getElementById('buy-form');
+
+    buyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const quantity = document.getElementById('buyQuantity').value;
+
+        const response = await fetch('/purchases/buy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ itemId, quantity }),
+        });
+
+        if (response.ok) {
+            alert('Purchase successful!');
+            const data = await response.json();
+            console.log('Purchase ID:', data.purchaseId);
+        } else {
+            const errorData = await response.json();
+            alert(`Failed to purchase item: ${errorData.message}`);
+        }
+    });
+
+    // Listen for real-time updates
+    socket.emit('joinItemRoom', itemId);
+
+    socket.on('quantityUpdated', (data) => {
+        if (data.itemId === itemId) {
+            document.getElementById('item-quantity').textContent = data.newQuantity;
+        }
+    });
+
+    socket.on('newBid', (data) => {
+        if (data.itemId === itemId) {
+            document.getElementById('highest-bid').textContent = data.bidAmount;
+        }
+    });
+
+    // Fetch initial data
+    fetchItemDetails();
+    fetchHighestBid();
+
+    // Cleanup when leaving the page
+    window.addEventListener('beforeunload', () => {
+        socket.emit('leaveItemRoom', itemId);
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header>
+    <h1>User Profile</h1>
+    <a href="dashboard.html">Back to Dashboard</a>
+</header>
+
+<main>
+    <form id="profile-form">
+        <label for="name">Full Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="phone">Phone Number:</label>
+        <input type="text" id="phone" name="phone" required>
+
+        <label for="address">Address:</label>
+        <textarea id="address" name="address" required></textarea>
+
+        <button type="submit">Update Profile</button>
+    </form>
+</main>
+
+<footer>
+    <p>&copy; 2024 Auction Site</p>
+</footer>
+
+<script>
+    async function fetchProfile() {
+        const response = await fetch('/users/profile');
+        const user = await response.json();
+
+        document.getElementById('name').value = user.name;
+        document.getElementById('email').value = user.email;
+        document.getElementById('phone').value = user.phone;
+        document.getElementById('address').value = user.address;
+    }
+
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = {
+            name: document.getElementById('name').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            address: document.getElementById('address').value,
+        };
+
+        const response = await fetch('/users/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
+            alert('Profile updated successfully!');
+        } else {
+            const errorData = await response.json();
+            alert(`Failed to update profile: ${errorData.message}`);
+        }
+    });
+
+    fetchProfile();
+</script>
+</body>
+</html>

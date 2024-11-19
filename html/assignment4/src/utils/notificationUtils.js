@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const twilio = require('twilio');
+require('dotenv').config();
 
 const emailTransporter = nodemailer.createTransport({
     service: 'Gmail',

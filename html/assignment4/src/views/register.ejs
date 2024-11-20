@@ -64,7 +64,7 @@
 
         if (response.ok) {
             alert('Registration successful!');
-            window.location.href = '/auth/login';
+            window.location.href = '/assignment4/auth/login';
         } else {
             const errorData = await response.json();
             alert(`Registration failed: ${errorData.message}`);

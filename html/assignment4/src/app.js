@@ -70,14 +70,22 @@ app.use('/assignment4/api', require('./routes/payment'));
 
 // Serve Dashboard.ejs from /dashboard route
 app.get('/assignment4/dashboard', (req, res) => {
-    const userItems = getUserItems(); // Fetch user's items
-    const purchasedItems = getPurchasedItems(); // Fetch purchased items
-    res.render('dashboard', {
-        pageTitle: 'Your Dashboard',
-        headerText: 'Welcome to Your Dashboard',
-        userItems,
-        purchasedItems
-    });
+    try {
+        // Fetch user items and purchased items
+        const userItems = await dashboardController.userItems(req, res);
+        const purchasedItems = await dashboardController.purchasedItems(req, res);
+
+        // Render the dashboard.ejs view and pass the data
+        res.render('dashboard', {
+            pageTitle: 'Your Dashboard',
+            headerText: 'Welcome to Your Dashboard',
+            userItems,  // Pass userItems data to the view
+            purchasedItems // Pass purchasedItems data to the view
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error fetching data');
+    }
 });
 
 

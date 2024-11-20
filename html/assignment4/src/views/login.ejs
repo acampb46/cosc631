@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title><%= pageTitle || "Login" %></title>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
 <header>
-    <h1>Login</h1>
+    <h1><%= headerText || "Login" %></h1>
 </header>
 
 <main>
@@ -24,7 +24,7 @@
 </main>
 
 <footer>
-    <p>&copy; 2024 Auction Site</p>
+    <p>&copy; <%= new Date().getFullYear() %> Auction Site</p>
 </footer>
 
 <script>
@@ -36,7 +36,7 @@
             password: document.getElementById('password').value,
         };
 
-        const response = await fetch('/users/login', {
+        const response = await fetch('/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData),
@@ -44,7 +44,7 @@
 
         if (response.ok) {
             alert('Login successful!');
-            window.location.href = '/dashboard.html';
+            window.location.href = '/dashboard';
         } else {
             const errorData = await response.json();
             alert(`Login failed: ${errorData.message}`);

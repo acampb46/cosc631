@@ -6,8 +6,24 @@ const router = express.Router();
 // User registration
 router.post('/register', authController.register);
 
+// Serve the register page
+router.get('/register', (req, res) => {
+    res.render('register', {
+        pageTitle: 'Register',
+        headerText: 'Register',
+    });
+});
+
 // User login
 router.post('/login', authController.login);
+
+// Serve the login page
+router.get('/login', (req, res) => {
+    res.render('login', {
+        pageTitle: 'Login Page',
+        headerText: 'Please Login to Your Account',
+    });
+});
 
 // User logout
 router.post('/logout', authController.logout);

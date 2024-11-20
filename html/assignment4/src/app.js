@@ -18,19 +18,23 @@ app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: t
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve the `views` folder statically
-app.use('/assignment4/views', express.static(path.join(__dirname, 'views')));
+app.use('/assignment4/src/views', express.static(path.join(__dirname, 'views')));
+app.set('view engine', 'ejs');
 
 // Default route to redirect to the index page
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views/index.html'));
-});
+    const items = [
+        { name: 'Antique Vase', price: '$100' },
+        { name: 'Vintage Watch', price: '$250' },
+        { name: 'Signed Football', price: '$75' }
+    ];
 
-app.get('/auth/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'login.html'));
-});
-
-app.get('/auth/register', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'register.html'));
+    res.render('index', {
+        pageTitle: 'Auction Site Home',
+        headerText: 'Welcome to the Auction Site',
+        featuredHeading: 'Featured Items',
+        items
+    });
 });
 
 // Routes

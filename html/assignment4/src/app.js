@@ -24,6 +24,7 @@ app.set('view engine', 'ejs');  // Set EJS as the template engine
 
 // Default route to redirect to the index page
 app.get('/assignment4', (req, res) => {
+    console.log("Routing to index.js");
     const items = [
         { name: 'Antique Vase', price: '$100' },
         { name: 'Vintage Watch', price: '$250' },

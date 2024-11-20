@@ -4,7 +4,15 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const http = require('http');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
+const fs = require("fs");
 require('dotenv').config({ path: '../.env' });
+
+app.set('trust proxy', true);
+
+const options = {
+    key: fs.readFileSync('/var/www/key/gerardcosc631_com.key'),
+    cert: fs.readFileSync('/etc/ssl/certs/gerardcosc631_chained.pem'),
+};
 
 const app = express();
 const server = http.createServer(app);

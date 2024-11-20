@@ -26,7 +26,7 @@ app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: t
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Set the views directory and EJS as the view engine
-app.set('views', path.join(__dirname, 'src', 'views'));  // Path to your views folder
+app.set('views', path.join(__dirname, 'views'));  // Path to your views folder
 app.set('view engine', 'ejs');  // Set EJS as the template engine
 
 

@@ -7,8 +7,6 @@ const { notFound, errorHandler } = require('./middlewares/errorHandler');
 const fs = require("fs");
 require('dotenv').config({ path: '../.env' });
 
-app.set('trust proxy', true);
-
 const options = {
     key: fs.readFileSync('/var/www/key/gerardcosc631_com.key'),
     cert: fs.readFileSync('/etc/ssl/certs/gerardcosc631_chained.pem'),
@@ -16,6 +14,8 @@ const options = {
 
 const app = express();
 const server = http.createServer(app);
+
+app.set('trust proxy', true);
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));

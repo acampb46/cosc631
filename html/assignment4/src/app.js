@@ -68,6 +68,19 @@ app.use('/assignment4/search', require('./routes/search'));
 app.use('/assignment4/transaction', require('./routes/transaction'));
 app.use('/assignment4/api', require('./routes/payment'));
 
+// Serve Dashboard.ejs from /dashboard route
+app.get('/assignment4/dashboard', (req, res) => {
+    const userItems = getUserItems(); // Fetch user's items
+    const purchasedItems = getPurchasedItems(); // Fetch purchased items
+    res.render('dashboard', {
+        pageTitle: 'Your Dashboard',
+        headerText: 'Welcome to Your Dashboard',
+        userItems,
+        purchasedItems
+    });
+});
+
+
 // Error Handling Middleware
 app.use(notFound);
 app.use(errorHandler);

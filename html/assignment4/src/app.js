@@ -25,6 +25,14 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'views/index.html'));
 });
 
+app.get('/auth/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'login.html'));
+});
+
+app.get('/auth/register', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'register.html'));
+});
+
 // Routes
 app.use('/auth', require('./routes/auth'));
 app.use('/items', require('./routes/items'));

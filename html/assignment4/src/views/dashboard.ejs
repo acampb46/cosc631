@@ -4,31 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/styles.css">
-    <title><%= pageTitle %></title> <!-- Dynamically setting the page title -->
+    <title><%= pageTitle %></title>
 </head>
 <body>
-<h1><%= headerText %></h1> <!-- Dynamic heading -->
-
+<h1><%= headerText %></h1>
 <section>
     <h2>Your Items</h2>
     <ul id="user-items">
         <% userItems.forEach(item => { %>
-            <li><%= item.title %> - Quantity: <%= item.quantity %></li> <!-- Rendering each item -->
+            <li><%= item.title %> - Quantity: <%= item.quantity %></li>
         <% }) %>
     </ul>
 </section>
-
 <section>
     <h2>Purchased Items</h2>
     <ul id="purchased-items">
         <% purchasedItems.forEach(item => { %>
-            <li><%= item.title %> - Purchased on: <%= item.transaction_date %></li> <!-- Rendering purchased items -->
+            <li><%= item.title %> - Purchased on: <%= item.transaction_date %></li>
         <% }) %>
     </ul>
 </section>
 
+<!-- Search Form -->
 <form id="search-form">
-    <label for="searchKeyword"></label>
+    <label for="searchKeyword">Search: </label>
     <input type="text" id="searchKeyword" name="keyword" placeholder="Search items" required>
     <button type="submit">Search</button>
 </form>
@@ -72,10 +71,10 @@
             items.forEach((item) => {
                 const div = document.createElement('div');
                 div.innerHTML = `
-          <h3>${item.title}</h3>
-          <p>${item.description}</p>
-          <p>Price: $${item.price}</p>
-        `;
+                    <h3>${item.title}</h3>
+                    <p>${item.description}</p>
+                    <p>Price: $${item.price}</p>
+                `;
                 searchResults.appendChild(div);
             });
         } else {

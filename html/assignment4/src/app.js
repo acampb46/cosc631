@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const https = require('https');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
+const dashboardController = require('./controllers/dashboardController');
 const fs = require("fs");
 require('dotenv').config({ path: '../.env' });
 

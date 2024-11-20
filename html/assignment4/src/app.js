@@ -60,13 +60,13 @@ app.get('/assignment4', (req, res) => {
 });
 
 // Routes
-app.use('/auth', require('./routes/auth'));
-app.use('/items', require('./routes/items'));
-app.use('/bids', require('./routes/bids'));
-app.use('/dashboard', require('./routes/dashboard'));
-app.use('/search', require('./routes/search'));
-app.use('/transaction', require('./routes/transaction'));
-app.use('/api', require('./routes/payment'));
+app.use('/assignment4/auth', require('./routes/auth'));
+app.use('/assignment4/items', require('./routes/items'));
+app.use('/assignment4/bids', require('./routes/bids'));
+app.use('/assignment4/dashboard', require('./routes/dashboard'));
+app.use('/assignment4/search', require('./routes/search'));
+app.use('/assignment4/transaction', require('./routes/transaction'));
+app.use('/assignment4/api', require('./routes/payment'));
 
 // Error Handling Middleware
 app.use(notFound);

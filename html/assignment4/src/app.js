@@ -18,7 +18,7 @@ app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: t
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve the `views` folder statically
-app.use('/assignment4/src/views', express.static(path.join(__dirname, 'views')));
+app.use('/assignment4/views', express.static(path.join(__dirname, 'views')));
 
 // Default route to redirect to the index page
 app.get('/', (req, res) => {

@@ -69,7 +69,7 @@ app.use('/assignment4/transaction', require('./routes/transaction'));
 app.use('/assignment4/api', require('./routes/payment'));
 
 // Serve Dashboard.ejs from /dashboard route
-app.get('/assignment4/dashboard', (req, res) => {
+app.get('/assignment4/dashboard', async (req, res) => {
     try {
         // Fetch user items and purchased items
         const userItems = await dashboardController.userItems(req, res);

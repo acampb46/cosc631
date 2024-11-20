@@ -29,6 +29,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('views', path.join(__dirname, 'views'));  // Path to your views folder
 app.set('view engine', 'ejs');  // Set EJS as the template engine
 
+// Log requests to the console
+app.use((req, res, next) => {
+    console.log(`Request URL: ${req.url}`);
+    next();
+});
 
 // Default route to redirect to the index page
 app.get('/assignment4', (req, res) => {

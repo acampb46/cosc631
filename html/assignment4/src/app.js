@@ -35,6 +35,13 @@ app.use((req, res, next) => {
     next();
 });
 
+app._router.stack.forEach((middleware) => {
+    if (middleware.route) {
+        console.log(middleware.route.path);
+    }
+});
+
+
 // Default route to redirect to the index page
 app.get('/assignment4', (req, res) => {
     console.log("Routing to index.js");

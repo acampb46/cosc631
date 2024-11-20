@@ -17,6 +17,14 @@ app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: t
 // Static Files
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve the `views` folder statically
+app.use('/views', express.static(path.join(__dirname, 'views')));
+
+// Default route to redirect to the index page
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views/index.html'));
+});
+
 // Routes
 app.use('/auth', require('./routes/auth'));
 app.use('/items', require('./routes/items'));

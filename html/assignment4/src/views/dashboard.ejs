@@ -4,21 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/styles.css">
-    <title>Dashboard</title>
+    <title><%= pageTitle %></title> <!-- Dynamically setting the page title -->
 </head>
 <body>
-<h1>Your Dashboard</h1>
+<h1><%= headerText %></h1> <!-- Dynamic heading -->
+
 <section>
     <h2>Your Items</h2>
-    <ul id="user-items"></ul>
+    <ul id="user-items">
+        <% userItems.forEach(item => { %>
+            <li><%= item.title %> - Quantity: <%= item.quantity %></li> <!-- Rendering each item -->
+        <% }) %>
+    </ul>
 </section>
+
 <section>
     <h2>Purchased Items</h2>
-    <ul id="purchased-items"></ul>
+    <ul id="purchased-items">
+        <% purchasedItems.forEach(item => { %>
+            <li><%= item.title %> - Purchased on: <%= item.transaction_date %></li> <!-- Rendering purchased items -->
+        <% }) %>
+    </ul>
 </section>
 
 <form id="search-form">
-    <label for="searchKeyword"></label><input type="text" id="searchKeyword" name="keyword" placeholder="Search items" required>
+    <label for="searchKeyword"></label>
+    <input type="text" id="searchKeyword" name="keyword" placeholder="Search items" required>
     <button type="submit">Search</button>
 </form>
 

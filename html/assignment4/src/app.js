@@ -13,7 +13,7 @@ const options = {
 };
 
 const app = express();
-const server = https.createServer(app,options);
+const server = https.createServer(options, app);
 
 app.set('trust proxy', true);
 

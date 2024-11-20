@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const session = require('express-session');
-const http = require('http');
+const https = require('https');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
 const fs = require("fs");
 require('dotenv').config({ path: '../.env' });

@@ -4,7 +4,6 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const https = require('https');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
-const dashboardController = require('./controllers/dashboardController');
 const fs = require("fs");
 require('dotenv').config({ path: '../.env' });
 
@@ -68,26 +67,6 @@ app.use('/assignment4/dashboard', require('./routes/dashboard'));
 app.use('/assignment4/search', require('./routes/search'));
 app.use('/assignment4/transaction', require('./routes/transaction'));
 app.use('/assignment4/api', require('./routes/payment'));
-
-// Serve Dashboard.ejs from /dashboard route
-app.get('/assignment4/dashboard', async (req, res) => {
-    try {
-        // Fetch user items and purchased items
-        const userItems = await dashboardController.userItems(req, res);
-        const purchasedItems = await dashboardController.purchasedItems(req, res);
-
-        // Render the dashboard.ejs view and pass the data
-        res.render('dashboard', {
-            pageTitle: 'Your Dashboard',
-            headerText: 'Welcome to Your Dashboard',
-            userItems,  // Pass userItems data to the view
-            purchasedItems // Pass purchasedItems data to the view
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Error fetching data');
-    }
-});
 
 
 // Error Handling Middleware

@@ -22,7 +22,7 @@ app.use('/assignment4/src/views', express.static(path.join(__dirname, 'views')))
 app.set('view engine', 'ejs');
 
 // Default route to redirect to the index page
-app.get('/', (req, res) => {
+app.get('/assignment4', (req, res) => {
     const items = [
         { name: 'Antique Vase', price: '$100' },
         { name: 'Vintage Watch', price: '$250' },

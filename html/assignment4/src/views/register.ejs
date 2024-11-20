@@ -12,7 +12,7 @@
 </header>
 
 <main>
-    <form id="register-form" action="/auth/register" method="POST">
+    <form id="register-form" action="/assignment4/auth/register" method="POST">
         <label for="name">Full Name:</label>
         <input type="text" id="name" name="name" required>
 
@@ -56,7 +56,7 @@
             paymentInfo: document.getElementById('payment-info').value,
         };
 
-        const response = await fetch('/auth/register', {
+        const response = await fetch('/assignment4/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData),

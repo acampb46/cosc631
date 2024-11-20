@@ -17,9 +17,10 @@ app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: t
 // Static Files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve the `views` folder statically
-app.use('/assignment4/src/views', express.static(path.join(__dirname, 'views')));
-app.set('view engine', 'ejs');
+// Set the views directory and EJS as the view engine
+app.set('views', path.join(__dirname, 'src', 'views'));  // Path to your views folder
+app.set('view engine', 'ejs');  // Set EJS as the template engine
+
 
 // Default route to redirect to the index page
 app.get('/assignment4', (req, res) => {

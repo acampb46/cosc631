@@ -8,6 +8,7 @@ router.post('/register', authController.register);
 
 // Serve the register page
 router.get('/register', (req, res) => {
+    console.log("Rendering register.ejs");
     res.render('register', {
         pageTitle: 'Register',
         headerText: 'Register',
@@ -19,6 +20,7 @@ router.post('/login', authController.login);
 
 // Serve the login page
 router.get('/login', (req, res) => {
+    console.log("Rendering login.ejs");
     res.render('login', {
         pageTitle: 'Login Page',
         headerText: 'Please Login to Your Account',

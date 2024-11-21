@@ -46,9 +46,9 @@ app._router.stack.forEach((middleware) => {
 app.get('/assignment4', (req, res) => {
     console.log("Routing to index.js");
     const items = [
-        { name: 'Antique Vase', price: '$100' },
-        { name: 'Vintage Watch', price: '$250' },
-        { name: 'Signed Football', price: '$75' }
+        { name: 'Antique Vase', price: '100' },
+        { name: 'Vintage Watch', price: '250' },
+        { name: 'Signed Football', price: '75' }
     ];
 
     res.render('index', {

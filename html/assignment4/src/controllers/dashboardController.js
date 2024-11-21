@@ -6,7 +6,7 @@ const dashboardController = {
         try {
             const userId = req.session.userId;
             const [items] = await db.execute('SELECT * FROM items WHERE seller_id = ?', [userId]);
-            res.status(200).json(items); // Send response
+            return items;
         } catch (error) {
             next(error); // Pass error to middleware
         }
@@ -19,7 +19,7 @@ const dashboardController = {
                 'SELECT t.*, i.title FROM transactions t JOIN items i ON t.item_id = i.id WHERE t.buyer_id = ?',
                 [userId]
             );
-            res.status(200).json(purchases); // Send response
+            return purchases;
         } catch (error) {
             next(error); // Pass error to middleware
         }

@@ -3,7 +3,7 @@ const router = express.Router();
 const dashboardController = require('../controllers/dashboardController');
 
 // Serve Dashboard.ejs from /dashboard route
-router.get('/dashboard', async (req, res) => {
+router.get('/load', async (req, res) => {
     try {
         // Fetch user items and purchased items
         const userItems = await dashboardController.userItems(req, res);

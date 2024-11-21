@@ -55,7 +55,7 @@
 
         if (response.ok) {
             alert('Login successful!');
-            window.location.href = '/assignment4/dashboard';
+            window.location.href = '/assignment4/dashboard/load';
         } else {
             const errorData = await response.json();
             alert(`Login failed: ${errorData.message}`);

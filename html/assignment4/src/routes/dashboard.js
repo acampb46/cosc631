@@ -3,7 +3,7 @@ const router = express.Router();
 const dashboardController = require('../controllers/dashboardController');
 
 // Serve Dashboard.ejs from /dashboard route
-router.get('/load', async (req, res) => {
+router.get('/load', async (req, res, next) => {
     try {
         // Fetch user items and purchased items
         const userItems = await dashboardController.userItems(req, res, next);
@@ -22,8 +22,8 @@ router.get('/load', async (req, res) => {
     }
 });
 
-// Correctly attach controller methods to the route
-router.get('/items', (req, res, next) => dashboardController.userItems(req, res, next));
-router.get('/purchases', (req, res, next) => dashboardController.purchasedItems(req, res, next));
+// Attach controller methods to their respective routes
+router.get('/items', dashboardController.userItems);
+router.get('/purchases', dashboardController.purchasedItems);
 
 module.exports = router;

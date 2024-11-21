@@ -1,4 +1,5 @@
 const Item = require('../models/Item');
+const db = require('../config/db');
 
 const dashboardController = {
     async userItems(req, res, next) {

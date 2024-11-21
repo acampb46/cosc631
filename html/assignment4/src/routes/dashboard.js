@@ -6,8 +6,8 @@ const dashboardController = require('../controllers/dashboardController');
 router.get('/load', async (req, res) => {
     try {
         // Fetch user items and purchased items
-        const userItems = await dashboardController.userItems(req, res);
-        const purchasedItems = await dashboardController.purchasedItems(req, res);
+        const userItems = await dashboardController.userItems(req, res, next);
+        const purchasedItems = await dashboardController.purchasedItems(req, res, next);
 
         // Render the dashboard.ejs view and pass the data
         res.render('dashboard', {
@@ -22,8 +22,8 @@ router.get('/load', async (req, res) => {
     }
 });
 
-// These routes handle fetching data (items and purchases) via API calls
-router.get('/items', dashboardController.userItems);
-router.get('/purchases', dashboardController.purchasedItems);
+// Correctly attach controller methods to the route
+router.get('/items', (req, res, next) => dashboardController.userItems(req, res, next));
+router.get('/purchases', (req, res, next) => dashboardController.purchasedItems(req, res, next));
 
 module.exports = router;

@@ -19,7 +19,9 @@ const authController = {
             if (!user || !(await bcrypt.compare(password, user.password))) {
                 return res.status(401).send({ message: 'Invalid credentials' });
             }
+            // Store user data in the session
             req.session.userId = user.id;
+            req.session.username = user.username;
             res.send({ message: 'Login successful' });
         } catch (error) {
             next(error);

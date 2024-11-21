@@ -11,7 +11,7 @@ router.get('/load', async (req, res, next) => {
 
         // Render the dashboard.ejs view and pass the data
         res.render('dashboard', {
-            console.log("Rendering dashboard.ejs")
+            console.log("Rendering dashboard.ejs");
             pageTitle: 'Your Dashboard',
             headerText: 'Welcome to Your Dashboard',
             userItems,  // Pass userItems data to the view

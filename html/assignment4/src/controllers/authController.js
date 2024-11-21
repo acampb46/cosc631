@@ -4,9 +4,9 @@ const User = require('../models/User');
 const authController = {
     async register(req, res, next) {
         try {
-            const { name, email, username, password } = req.body;
+            const { name, email, username, password, phone, address, payment-info } = req.body;
             const hashedPassword = await bcrypt.hash(password, 10);
-            const userId = await User.create({ name, email, username, password: hashedPassword });
+            const userId = await User.create({ name, email, username, password: hashedPassword, phone, address, payment-info });
             res.status(201).send({ message: 'User registered successfully', userId });
         } catch (error) {
             next(error);

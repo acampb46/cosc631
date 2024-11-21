@@ -36,8 +36,8 @@
 
 <script>
     async function fetchData() {
-        const userItems = await fetch('/dashboard/items').then(res => res.json());
-        const purchasedItems = await fetch('/dashboard/purchases').then(res => res.json());
+        const userItems = await fetch('/assignment4/dashboard/items').then(res => res.json());
+        const purchasedItems = await fetch('/assignment4/dashboard/purchases').then(res => res.json());
 
         const userItemsList = document.getElementById('user-items');
         userItems.forEach(item => {
@@ -63,7 +63,7 @@
         e.preventDefault();
         const keyword = document.getElementById('searchKeyword').value;
 
-        const response = await fetch(`/search?keyword=${encodeURIComponent(keyword)}`);
+        const response = await fetch(`/assignment4/search?keyword=${encodeURIComponent(keyword)}`);
         const items = await response.json();
 
         searchResults.innerHTML = '';

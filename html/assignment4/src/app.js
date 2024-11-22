@@ -48,21 +48,26 @@ app.get('/assignment4', async (req, res) => {
     console.log("Routing to index.js");
 
     try {
-        // Query the database to fetch the top 3 newest items based on the createdAt field
-        const items = await getTop3Newest();
+        // Fetch the top 3 newest items from the database
+        const items = await Item.getTop3Newest();
+
+        // Check if the user is logged in
+        const isLoggedIn = !!req.session.userId;
 
         // Render the index page with the fetched items
         res.render('index', {
             pageTitle: 'Auction Site Home',
             headerText: 'Welcome to the Auction Site',
             featuredHeading: 'Featured Items',
-            items
+            items,
+            isLoggedIn
         });
     } catch (error) {
         console.error('Error fetching items:', error);
         res.status(500).send('Internal Server Error');
     }
 });
+
 
 // Routes
 app.use('/assignment4/auth', require('./routes/auth'));

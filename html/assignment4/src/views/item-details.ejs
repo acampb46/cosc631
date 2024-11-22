@@ -27,7 +27,7 @@
                     <% if (item.image_url) { %>
                     <img src="<%= item.image_url %>" class="img-fluid rounded-start" alt="Item Image">
                     <% } else { %>
-                    <img src="/images/placeholder.png" class="img-fluid rounded-start" alt="Placeholder Image">
+                    <img src="./../../public/images/placeholder.png" class="img-fluid rounded-start" alt="Placeholder Image">
                     <% } %>
                 </div>
                 <div class="col-md-8">
@@ -82,6 +82,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
         crossorigin="anonymous"></script>
+<script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
 <script src="./../socket.js"></script>
 <script>
     const itemId = "<%= item.id %>";
@@ -112,14 +113,15 @@
                 body: JSON.stringify({ itemId, bidAmount }),
             });
 
-            if (response.ok) {
-                alert('Bid placed successfully!');
-            } else {
+            if (!response.ok) {
                 const errorData = await response.json();
                 alert(`Failed to place bid: ${errorData.message}`);
+            } else {
+                alert('Bid placed successfully!');
             }
         } catch (error) {
-            console.error('Failed to place bid:', error);
+            console.error('Network or server error:', error);
+            alert('There was an error processing your bid. Please try again.');
         }
     });
 
@@ -159,6 +161,10 @@
 
     window.addEventListener('beforeunload', () => {
         socket.emit('leaveItemRoom', itemId);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Socket disconnected');
     });
 </script>
 </body>

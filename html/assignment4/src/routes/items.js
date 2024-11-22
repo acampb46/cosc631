@@ -14,7 +14,7 @@ router.get('/submit', (req, res) => {
     });
 });
 
-router.post('/create', upload.single('image'), itemController.create);
+router.post('/create', itemController.create);
 router.get('/', itemController.list);
 router.get('/:id', itemController.getById);
 

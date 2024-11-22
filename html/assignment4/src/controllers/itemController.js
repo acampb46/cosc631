@@ -26,7 +26,9 @@ const itemController = {
             const { id } = req.params;
             const item = await Item.getById(id);
             if (!item) return res.status(404).send({ message: 'Item not found' });
-            res.send(item);
+
+            // Render item details page with the fetched item data
+            res.render('item-details', { item });
         } catch (error) {
             next(error);
         }

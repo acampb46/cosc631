@@ -18,7 +18,7 @@
     </header>
 
     <!-- Form Section -->
-    <form id="submit-item-form" action="/assignment4/items/create" method="POST" class="needs-validation" novalidate>
+    <form id="submit-item-form" class="needs-validation" novalidate>
         <div class="mb-3">
             <label for="title" class="form-label">Item Title</label>
             <input type="text" class="form-control" id="title" name="title" placeholder="Enter item title" required>
@@ -75,20 +75,58 @@
         crossorigin="anonymous">
 </script>
 <script>
+    document.getElementById('submit-item-form').addEventListener('submit', async function (event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        // Collect form data
+        const formData = {
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            price: document.getElementById('price').value,
+            quantity: document.getElementById('quantity').value,
+            imageUrl: document.getElementById('imageUrl').value
+        };
+
+        try {
+            // Send a POST request to the server
+            const response = await fetch('/assignment4/items/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                // If the response is OK, show an alert and redirect to the dashboard
+                alert('Item submitted successfully!');
+                window.location.href = '/assignment4/dashboard/load';
+            } else {
+                // If there's an error, show an alert with the error message
+                const errorData = await response.json();
+                alert(`Error: ${errorData.message}`);
+            }
+        } catch (error) {
+            // Handle any network or other errors
+            console.error('Error submitting item:', error);
+            alert('An unexpected error occurred. Please try again later.');
+        }
+    });
+
     // Bootstrap form validation
     (function () {
-        'use strict'
-        const forms = document.querySelectorAll('.needs-validation')
+        'use strict';
+        const forms = document.querySelectorAll('.needs-validation');
 
         Array.from(forms).forEach(function (form) {
             form.addEventListener('submit', function (event) {
                 if (!form.checkValidity()) {
-                    event.preventDefault()
-                    event.stopPropagation()
+                    event.preventDefault();
+                    event.stopPropagation();
                 }
-                form.classList.add('was-validated')
-            }, false)
-        })
+                form.classList.add('was-validated');
+            }, false);
+        });
     })();
 </script>
 </body>

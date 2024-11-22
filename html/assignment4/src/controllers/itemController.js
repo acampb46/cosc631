@@ -3,17 +3,26 @@ const Item = require('../models/Item');
 const itemController = {
     async create(req, res, next) {
         try {
-            const {title, description, price, quantity, imageUrl, category, startingBid, auctionEnd} = req.body;
+            const { title, description, category, price, startingBid, auctionEnd, quantity, imageUrl } = req.body;
             const sellerId = req.session.userId; // Get user ID from session
 
-            // Create item using the passed data
-            const itemId = await Item.create({
-                title, description, price, quantity, sellerId, imageUrl, category, startingBid, auctionEnd
-            });
+            // Conditionally format the data based on the category in the controller
+            const itemData = {
+                title,
+                description,
+                category,
+                price: category === 'for sale' ? price : null,
+                startingBid: category === 'auction' ? startingBid : null,
+                auctionEnd: category === 'auction' ? auctionEnd : null,
+                quantity,
+                imageUrl,
+                sellerId
+            };
 
-            res.status(201).send({message: 'Item created successfully', itemId});
+            const itemId = await Item.create(itemData); // Pass the item data directly to the model
+            res.status(201).json({ message: 'Item created successfully', itemId });
         } catch (error) {
-            next(error); // Pass the error to error-handling middleware
+            next(error); // Pass the error to the error handler middleware
         }
     }, async list(req, res, next) {
         try {

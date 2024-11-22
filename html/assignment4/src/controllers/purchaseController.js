@@ -1,5 +1,4 @@
 const db = require('../config/db');
-const io = require('../socket');
 const axios = require('axios');
 const transactionController = require('../controllers/transactionController');
 const { createTransaction } = require('../models/Transaction');

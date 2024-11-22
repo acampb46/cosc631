@@ -1,5 +1,4 @@
 const Bid = require('../models/Bid');
-const io = require('../socket');
 
 const bidController = {
     async placeBid(req, res, next) {

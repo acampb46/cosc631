@@ -1,4 +1,4 @@
-const socketIo = require('socket.io-client');
+const socketIo = require('socket.io');
 
 module.exports = (server) => {
     const io = socketIo(server);

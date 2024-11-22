@@ -9,7 +9,7 @@ router.get('/submit', (req, res) => {
     });
 });
 
-router.post('/create', async (req, res, next) => {
+router.post('/create', async (req, res, next) => {  // Make sure 'next' is here
     try {
         const {title, description, category, price, startingBid, auctionEnd, quantity, imageUrl} = req.body;
 
@@ -28,7 +28,7 @@ router.post('/create', async (req, res, next) => {
         res.status(201).json({message: 'Item created successfully', item});
     } catch (error) {
         console.error('Error creating item:', error);
-        res.status(500).json({message: 'Failed to create item', error: error.message});
+        next(error); // Pass the error to the next middleware (i.e., error handler)
     }
 });
 router.get('/', itemController.list);

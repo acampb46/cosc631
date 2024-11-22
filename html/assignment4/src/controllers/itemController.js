@@ -6,14 +6,14 @@ const itemController = {
             const {title, description, price, quantity, imageUrl, category, startingBid, auctionEnd} = req.body;
             const sellerId = req.session.userId; // Get user ID from session
 
-            // Now no further checks needed in the controller, just insert the item into the DB
+            // Create item using the passed data
             const itemId = await Item.create({
                 title, description, price, quantity, sellerId, imageUrl, category, startingBid, auctionEnd
             });
 
             res.status(201).send({message: 'Item created successfully', itemId});
         } catch (error) {
-            next(error);
+            next(error); // Pass the error to error-handling middleware
         }
     }, async list(req, res, next) {
         try {

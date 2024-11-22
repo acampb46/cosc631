@@ -18,7 +18,7 @@
     </header>
 
     <!-- Form Section -->
-    <form id="submit-item-form" class="needs-validation" novalidate enctype="multipart/form-data" method="POST" action="/assignment4/items/create">
+    <form id="submit-item-form" class="needs-validation" novalidate method="POST" action="/assignment4/items/create">
         <div class="mb-3">
             <label for="title" class="form-label">Item Title</label>
             <input type="text" class="form-control" id="title" name="title" placeholder="Enter item title" required>
@@ -126,24 +126,31 @@
 
         const formElement = document.getElementById('submit-item-form');
 
-        // Use FormData to collect all form data, including files
-        const formData = new FormData(formElement);
+        // Create a JSON object from the form data
+        const formData = {
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            category: document.getElementById('category').value,
+            price: document.getElementById('price').value,
+            quantity: document.getElementById('quantity').value,
+            imageUrl: document.getElementById('imageUrl').value,
+        };
 
-        // Dynamically handle category-specific inputs
-        const category = formData.get('category'); // Retrieve the category selection
-
-        if (category === 'for sale') {
-            formData.delete('starting-bid');
-            formData.delete('auction-end');
-        } else if (category === 'auction') {
-            formData.delete('price');
+        // If it's an auction, include auction-related fields
+        if (formData.category === 'auction') {
+            formData.startingBid = document.getElementById('starting-bid').value;
+            formData.auctionEnd = document.getElementById('auction-end').value;
+            delete formData.price; // Remove price for auction items
         }
 
         try {
-            // Send a POST request to the server
+            // Send a POST request with a JSON payload
             const response = await fetch('/assignment4/items/create', {
                 method: 'POST',
-                body: formData, // Send FormData directly
+                headers: {
+                    'Content-Type': 'application/json', // Specify JSON content type
+                },
+                body: JSON.stringify(formData), // Send formData as JSON
             });
 
             if (response.ok) {

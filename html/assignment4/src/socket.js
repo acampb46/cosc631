@@ -1,7 +1,7 @@
 const socketIo = require('socket.io');
 
 module.exports = (server) => {
-    const io = new socketIo(server);
+    const io = socketIo(server);
 
     io.on('connection', (socket) => {
         console.log(`New client connected: ${socket.id}`);

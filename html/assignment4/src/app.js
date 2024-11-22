@@ -3,9 +3,8 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const https = require('https');
-const fs = require("fs");
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
-const {getTop3Newest} = require("./models/Item");
+const fs = require("fs");
 require('dotenv').config({ path: '../.env' });
 
 const options = {
@@ -44,30 +43,21 @@ app._router.stack.forEach((middleware) => {
 
 
 // Default route to redirect to the index page
-app.get('/assignment4', async (req, res) => {
+app.get('/assignment4', (req, res) => {
     console.log("Routing to index.js");
+    const items = [
+        { name: 'Antique Vase', price: '100' },
+        { name: 'Vintage Watch', price: '250' },
+        { name: 'Signed Football', price: '75' }
+    ];
 
-    try {
-        // Fetch the top 3 newest items from the database
-        const items = await getTop3Newest();
-
-        // Check if the user is logged in
-        const isLoggedIn = !!req.session.userId;
-
-        // Render the index page with the fetched items
-        res.render('index', {
-            pageTitle: 'Auction Site Home',
-            headerText: 'Welcome to the Auction Site',
-            featuredHeading: 'Featured Items',
-            items,
-            isLoggedIn
-        });
-    } catch (error) {
-        console.error('Error fetching items:', error);
-        res.status(500).send('Internal Server Error');
-    }
+    res.render('index', {
+        pageTitle: 'Auction Site Home',
+        headerText: 'Welcome to the Auction Site',
+        featuredHeading: 'Featured Items',
+        items
+    });
 });
-
 
 // Routes
 app.use('/assignment4/auth', require('./routes/auth'));

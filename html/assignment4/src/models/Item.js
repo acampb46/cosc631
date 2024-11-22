@@ -12,6 +12,15 @@ const Item = {
         const [rows] = await db.execute('SELECT * FROM items WHERE quantity > 0');
         return rows;
     },
+    async getTop3Newest() {
+        const [rows] = await db.execute(`
+        SELECT * FROM items
+        WHERE quantity > 0
+        ORDER BY created_at DESC  
+        LIMIT 3                  
+    `);
+        return rows;
+    },
     async getById(id) {
         const [rows] = await db.execute('SELECT * FROM items WHERE id = ?', [id]);
         return rows[0];

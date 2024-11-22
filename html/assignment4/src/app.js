@@ -25,7 +25,7 @@ app.use(bodyParser.json());
 app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: true }));
 
 // Static Files
-app.use(express.static(path.join(__dirname, 'public')));
+app.use('/assignment4', express.static(path.join(__dirname, 'public')));
 
 // Set the views directory and EJS as the view engine
 app.set('views', path.join(__dirname, 'views'));  // Path to your views folder

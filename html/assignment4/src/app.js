@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const https = require('https');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
-const socketSetup = require('socket');
+const socketSetup = require('./socket');
 const fs = require("fs");
 require('dotenv').config({ path: '../.env' });
 

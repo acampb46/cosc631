@@ -49,7 +49,7 @@ app.get('/assignment4', async (req, res) => {
 
     try {
         // Fetch the top 3 newest items from the database
-        const items = await Item.getTop3Newest();
+        const items = await getTop3Newest();
 
         // Check if the user is logged in
         const isLoggedIn = !!req.session.userId;

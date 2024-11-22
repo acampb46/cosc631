@@ -133,8 +133,8 @@
         const category = formData.get('category'); // Retrieve the category selection
 
         if (category === 'for sale') {
-            formData.delete('startingBid');
-            formData.delete('auctionEnd');
+            formData.delete('starting-bid');
+            formData.delete('auction-end');
         } else if (category === 'auction') {
             formData.delete('price');
         }

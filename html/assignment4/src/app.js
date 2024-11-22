@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const https = require('https');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
+const socketIo = require('./socket');
 const fs = require("fs");
 require('dotenv').config({ path: '../.env' });
 
@@ -14,6 +15,7 @@ const options = {
 
 const app = express();
 const server = https.createServer(options, app);
+const io = socketIo(server);
 
 app.set('trust proxy', true);
 

@@ -21,14 +21,15 @@
     <section class="mb-4">
         <div class="d-flex justify-content-between align-items-center">
             <h2>Your Items</h2>
-            <!-- Link to Submit Item -->
             <a href="/assignment4/items/submit" class="btn btn-primary">Add New Item</a>
         </div>
         <% if (userItems && userItems.length > 0) { %>
             <ul class="list-group mt-3">
                 <% userItems.forEach(item => { %>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><%= item.title %></span>
+                        <a href="/assignment4/items/details/<%= item.id %>" class="text-decoration-none">
+                            <%= item.title %>
+                        </a>
                         <span class="badge bg-secondary">Quantity: <%= item.quantity %></span>
                     </li>
                 <% }) %>
@@ -45,7 +46,9 @@
             <ul class="list-group mt-3">
                 <% purchasedItems.forEach(item => { %>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><%= item.title %></span>
+                        <a href="/assignment4/items/details/<%= item.id %>" class="text-decoration-none">
+                            <%= item.title %>
+                        </a>
                         <span class="text-muted">Purchased on: <%= item.transaction_date %></span>
                     </li>
                 <% }) %>
@@ -79,39 +82,6 @@
         crossorigin="anonymous">
 </script>
 <script>
-    // Fetch data for User Items and Purchased Items dynamically
-    async function fetchData() {
-        const userItems = await fetch('/assignment4/dashboard/items').then(res => res.json());
-        const purchasedItems = await fetch('/assignment4/dashboard/purchases').then(res => res.json());
-
-        const userItemsList = document.getElementById('user-items');
-        const purchasedItemsList = document.getElementById('purchased-items');
-
-        // Update User Items
-        if (userItems.length > 0) {
-            userItemsList.innerHTML = '';
-            userItems.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                li.innerHTML = `<span>${item.title}</span><span class="badge bg-secondary">Quantity: ${item.quantity}</span>`;
-                userItemsList.appendChild(li);
-            });
-        }
-
-        // Update Purchased Items
-        if (purchasedItems.length > 0) {
-            purchasedItemsList.innerHTML = '';
-            purchasedItems.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                li.innerHTML = `<span>${item.title}</span><span class="text-muted">Purchased on: ${item.transaction_date}</span>`;
-                purchasedItemsList.appendChild(li);
-            });
-        }
-    }
-
-    fetchData();
-
     const searchForm = document.getElementById('search-form');
     const searchResults = document.getElementById('search-results');
 
@@ -125,16 +95,22 @@
 
         searchResults.innerHTML = '';
         if (items.length > 0) {
+            const listGroup = document.createElement('ul');
+            listGroup.className = 'list-group mt-3';
+
             items.forEach((item) => {
-                const div = document.createElement('div');
-                div.className = 'border p-3 mb-2';
-                div.innerHTML = `
-                        <h3>${item.title}</h3>
-                        <p>${item.description}</p>
-                        <p class="fw-bold">Price: $${item.price}</p>
-                    `;
-                searchResults.appendChild(div);
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.innerHTML = `
+                    <a href="/assignment4/items/details/${item.id}" class="text-decoration-none">
+                        ${item.title}
+                    </a>
+                    <span class="fw-bold">Price: $${item.price}</span>
+                `;
+                listGroup.appendChild(li);
             });
+
+            searchResults.appendChild(listGroup);
         } else {
             searchResults.textContent = 'No items found.';
         }

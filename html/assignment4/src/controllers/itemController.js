@@ -6,6 +6,7 @@ const itemController = {
             const { title, description, price, quantity } = req.body;
             const sellerId = req.session.userId; // Get user ID from session
             const imageUrl = req.file ? `/images/${req.file.filename}` : null; // Handle uploaded file
+            console.log("Uploaded file info:", req.file);
 
             const itemId = await Item.create({ title, description, price, quantity, sellerId, imageUrl });
             res.status(201).send({ message: 'Item created successfully', itemId });

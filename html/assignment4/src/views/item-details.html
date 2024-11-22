@@ -10,7 +10,7 @@
 <body>
 <header>
     <h1>Item Details</h1>
-    <a href="/dashboard">Go to Dashboard</a>
+    <a href="/assignment4/dashboard/load">Go to Dashboard</a>
 </header>
 
 <main>
@@ -53,7 +53,7 @@
 
     async function fetchItemDetails() {
         try {
-            const response = await fetch(`/items/${itemId}`);
+            const response = await fetch(`/assignment4/items/${itemId}`);
             const item = await response.json();
 
             // Populate item details
@@ -74,7 +74,7 @@
 
     async function fetchHighestBid() {
         try {
-            const response = await fetch(`/bids/highest/${itemId}`);
+            const response = await fetch(`/assignment4/bids/highest/${itemId}`);
             const data = await response.json();
             document.getElementById('highest-bid').textContent = data.amount ? data.amount : 'No bids yet';
         } catch (error) {
@@ -87,7 +87,7 @@
         const bidAmount = document.getElementById('bidAmount').value;
 
         try {
-            const response = await fetch('/bids/place', {
+            const response = await fetch('/assignment4/bids/place', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ itemId, bidAmount }),
@@ -110,7 +110,7 @@
         e.preventDefault();
         const quantity = document.getElementById('buyQuantity').value;
 
-        const response = await fetch('/purchases/buy', {
+        const response = await fetch('/assignment4/purchases/buy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ itemId, quantity }),

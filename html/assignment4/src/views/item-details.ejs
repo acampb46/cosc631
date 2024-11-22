@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= item.title %> - Item Details</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css"
+          integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9"
+          crossorigin="anonymous">
+</head>
+<body class="bg-light">
+<div class="container py-4">
+    <!-- Header -->
+    <header class="text-center mb-4">
+        <h1 class="display-5"><%= item.title %></h1>
+        <a href="/assignment4/dashboard/load" class="btn btn-secondary">Back to Dashboard</a>
+    </header>
+
+    <!-- Item Information -->
+    <section class="mb-4">
+        <h2>Item Information</h2>
+        <div class="card">
+            <div class="row g-0">
+                <div class="col-md-4">
+                    <% if (item.image_url) { %>
+                    <img src="<%= item.image_url %>" class="img-fluid rounded-start" alt="Item Image">
+                    <% } else { %>
+                    <img src="/images/placeholder.png" class="img-fluid rounded-start" alt="Placeholder Image">
+                    <% } %>
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <h5 class="card-title"><%= item.title %></h5>
+                        <p class="card-text"><%= item.description %></p>
+                        <p class="card-text"><strong>Price:</strong> $<%= item.price %></p>
+                        <p class="card-text"><strong>Quantity:</strong> <%= item.quantity %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bidding Section -->
+    <section class="mb-4">
+        <h2>Place a Bid</h2>
+        <form id="bid-form" class="row g-3">
+            <div class="col-md-6">
+                <input type="number" id="bidAmount" name="bidAmount" class="form-control" placeholder="Enter your bid" required>
+            </div>
+            <div class="col-md-6">
+                <button type="submit" class="btn btn-primary">Place Bid</button>
+            </div>
+        </form>
+        <p class="mt-2"><strong>Current Highest Bid:</strong> $<span id="highest-bid">Loading...</span></p>
+    </section>
+
+    <!-- Purchase Section -->
+    <section class="mb-4">
+        <h2>Buy Now</h2>
+        <form id="buy-form" class="row g-3">
+            <div class="col-md-6">
+                <input type="number" id="buyQuantity" name="quantity" class="form-control" placeholder="Enter quantity" required>
+            </div>
+            <div class="col-md-6">
+                <button type="submit" class="btn btn-success">Buy Now</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<footer class="text-center py-3 bg-dark text-light">
+    <p>&copy; 2024 Auction Site</p>
+</footer>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
+        crossorigin="anonymous"></script>
+<script>
+    const itemId = "<%= item.id %>";
+    const socket = io();
+
+    async function fetchHighestBid() {
+        try {
+            const response = await fetch(`/assignment4/bids/highest/${itemId}`);
+            const data = await response.json();
+            document.getElementById('highest-bid').textContent = data.amount ? data.amount : 'No bids yet';
+        } catch (error) {
+            console.error('Failed to fetch highest bid:', error);
+        }
+    }
+
+    document.getElementById('bid-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const bidAmount = document.getElementById('bidAmount').value;
+
+        try {
+            const response = await fetch('/assignment4/bids/place', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ itemId, bidAmount }),
+            });
+
+            if (response.ok) {
+                alert('Bid placed successfully!');
+            } else {
+                const errorData = await response.json();
+                alert(`Failed to place bid: ${errorData.message}`);
+            }
+        } catch (error) {
+            console.error('Failed to place bid:', error);
+        }
+    });
+
+    document.getElementById('buy-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const quantity = document.getElementById('buyQuantity').value;
+
+        const response = await fetch('/assignment4/purchases/buy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ itemId, quantity }),
+        });
+
+        if (response.ok) {
+            alert('Purchase successful!');
+        } else {
+            const errorData = await response.json();
+            alert(`Failed to purchase item: ${errorData.message}`);
+        }
+    });
+
+    socket.emit('joinItemRoom', itemId);
+
+    socket.on('quantityUpdated', (data) => {
+        if (data.itemId === itemId) {
+            document.getElementById('item-quantity').textContent = data.newQuantity;
+        }
+    });
+
+    socket.on('newBid', (data) => {
+        if (data.itemId === itemId) {
+            document.getElementById('highest-bid').textContent = data.bidAmount;
+        }
+    });
+
+    fetchHighestBid();
+
+    window.addEventListener('beforeunload', () => {
+        socket.emit('leaveItemRoom', itemId);
+    });
+</script>
+</body>
+</html>

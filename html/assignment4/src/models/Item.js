@@ -1,10 +1,10 @@
 const db = require('../config/db');
 
 const Item = {
-    async create({ title, description, price, quantity, sellerId, imageUrl }) {
+    async create({ title, description, price, quantity, sellerId, imageUrl, category, startingBid, auctionEnd, }) {
         const [result] = await db.execute(
-            'INSERT INTO items (title, description, price, quantity, seller_id, image_url) VALUES (?, ?, ?, ?, ?, ?)',
-            [title, description, price, quantity, sellerId, imageUrl]
+            'INSERT INTO items (title, description, price, quantity, seller_id, image_url, category, starting_bid, auction_end) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [title, description, price, quantity, sellerId, imageUrl, category, startingBid, auctionEnd]
         );
         return result.insertId;
     },

@@ -37,11 +37,35 @@
         </div>
 
         <div class="mb-3">
+            <label for="category" class="form-label">Category</label>
+            <select class="form-select" id="category" name="category" required>
+                <option value="for sale" selected>For Sale</option>
+                <option value="auction">Auction</option>
+            </select>
+            <div class="invalid-feedback">
+                Please select a category.
+            </div>
+        </div>
+
+        <div class="mb-3" id="price-section">
             <label for="price" class="form-label">Price (USD)</label>
-            <input type="number" class="form-control" id="price" name="price" step="0.01" placeholder="Enter the price"
-                   required>
+            <input type="number" class="form-control" id="price" name="price" step="0.01" placeholder="Enter the price" required>
             <div class="invalid-feedback">
                 Please enter a valid price.
+            </div>
+        </div>
+
+        <div class="mb-3" id="auction-details" style="display: none;">
+            <label for="starting-bid" class="form-label">Starting Bid (USD)</label>
+            <input type="number" class="form-control" id="starting-bid" name="startingBid" step="0.01" placeholder="Enter the starting bid">
+            <div class="invalid-feedback">
+                Please enter a valid starting bid.
+            </div>
+
+            <label for="auction-end" class="form-label mt-3">Auction End Time</label>
+            <input type="datetime-local" class="form-control" id="auction-end" name="auctionEnd">
+            <div class="invalid-feedback">
+                Please provide a valid end time for the auction.
             </div>
         </div>
 
@@ -75,26 +99,51 @@
         crossorigin="anonymous">
 </script>
 <script>
+    const categoryDropdown = document.getElementById('category');
+    const priceSection = document.getElementById('price-section');
+    const auctionDetails = document.getElementById('auction-details');
+
+    categoryDropdown.addEventListener('change', function () {
+        if (this.value === 'auction') {
+            // Show auction-specific inputs
+            priceSection.style.display = 'none';
+            auctionDetails.style.display = 'block';
+            document.getElementById('price').required = false;
+            document.getElementById('starting-bid').required = true;
+            document.getElementById('auction-end').required = true;
+        } else {
+            // Show price input for "For Sale"
+            priceSection.style.display = 'block';
+            auctionDetails.style.display = 'none';
+            document.getElementById('price').required = true;
+            document.getElementById('starting-bid').required = false;
+            document.getElementById('auction-end').required = false;
+        }
+    });
+
     document.getElementById('submit-item-form').addEventListener('submit', async function (event) {
         event.preventDefault(); // Prevent the default form submission
 
-        // Collect form data
-        const formData = {
-            title: document.getElementById('title').value,
-            description: document.getElementById('description').value,
-            price: document.getElementById('price').value,
-            quantity: document.getElementById('quantity').value,
-            imageUrl: document.getElementById('imageUrl').value
-        };
+        const formElement = document.getElementById('submit-item-form');
+
+        // Use FormData to collect all form data, including files
+        const formData = new FormData(formElement);
+
+        // Dynamically handle category-specific inputs
+        const category = formData.get('category'); // Retrieve the category selection
+
+        if (category === 'for sale') {
+            formData.delete('startingBid');
+            formData.delete('auctionEnd');
+        } else if (category === 'auction') {
+            formData.delete('price');
+        }
 
         try {
             // Send a POST request to the server
             const response = await fetch('/assignment4/items/create', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
+                body: formData, // Send FormData directly (automatically handles file uploads)
             });
 
             if (response.ok) {

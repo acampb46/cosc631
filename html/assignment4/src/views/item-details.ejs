@@ -43,31 +43,35 @@
     </section>
 
     <!-- Bidding Section -->
-    <section class="mb-4">
-        <h2>Place a Bid</h2>
-        <form id="bid-form" class="row g-3">
-            <div class="col-md-6">
-                <input type="number" id="bidAmount" name="bidAmount" class="form-control" placeholder="Enter your bid" required>
-            </div>
-            <div class="col-md-6">
-                <button type="submit" class="btn btn-primary">Place Bid</button>
-            </div>
-        </form>
-        <p class="mt-2"><strong>Current Highest Bid:</strong> $<span id="highest-bid">Loading...</span></p>
-    </section>
+    <% if (item.category === 'auction') { %>
+        <section class="mb-4">
+            <h2>Place a Bid</h2>
+            <form id="bid-form" class="row g-3">
+                <div class="col-md-6">
+                    <input type="number" id="bidAmount" name="bidAmount" class="form-control" placeholder="Enter your bid" required>
+                </div>
+                <div class="col-md-6">
+                    <button type="submit" class="btn btn-primary">Place Bid</button>
+                </div>
+            </form>
+            <p class="mt-2"><strong>Current Highest Bid:</strong> $<span id="highest-bid">Loading...</span></p>
+        </section>
+    <% } %>
 
     <!-- Purchase Section -->
-    <section class="mb-4">
-        <h2>Buy Now</h2>
-        <form id="buy-form" class="row g-3">
-            <div class="col-md-6">
-                <input type="number" id="buyQuantity" name="quantity" class="form-control" placeholder="Enter quantity" required>
-            </div>
-            <div class="col-md-6">
-                <button type="submit" class="btn btn-success">Buy Now</button>
-            </div>
-        </form>
-    </section>
+    <% if (item.category === 'for sale') { %>
+        <section class="mb-4">
+            <h2>Buy Now</h2>
+            <form id="buy-form" class="row g-3">
+                <div class="col-md-6">
+                    <input type="number" id="buyQuantity" name="quantity" class="form-control" placeholder="Enter quantity" required>
+                </div>
+                <div class="col-md-6">
+                    <button type="submit" class="btn btn-success">Buy Now</button>
+                </div>
+            </form>
+        </section>
+    <% } %>
 </div>
 
 <footer class="text-center py-3 bg-dark text-light">

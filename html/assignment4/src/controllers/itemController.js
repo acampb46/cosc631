@@ -3,6 +3,7 @@ const Item = require('../models/Item');
 const itemController = {
     async create(req, res, next) {
         try {
+            console.log(req.body);
             const { title, description, category, price, startingBid, auctionEnd, quantity, imageUrl } = req.body;
             const sellerId = req.session.userId; // Get user ID from session
 

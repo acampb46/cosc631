@@ -6,6 +6,7 @@ const { createTransaction } = require('../models/Transaction');
 
 const purchaseController = {
     async buyNow(req, res, next) {
+        console.log("Entering buyNow logic");
         const { itemId, quantity, paymentToken } = req.body;
         const userId = req.session.userId;
 

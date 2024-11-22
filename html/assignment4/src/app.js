@@ -3,9 +3,9 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const https = require('https');
+const fs = require('fs');
+const socketIo = require('socket.io');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
-const socketSetup = require('./socket');
-const fs = require("fs");
 require('dotenv').config({ path: '../.env' });
 
 const options = {
@@ -15,8 +15,30 @@ const options = {
 
 const app = express();
 const server = https.createServer(options, app);
-const io = socketSetup(server);
+const io = socketIo(server); // Attach Socket.IO to the server
 
+// Socket.IO logic
+io.on('connection', (socket) => {
+    console.log(`New client connected: ${socket.id}`);
+
+    // Join a room for an item (used for bidding updates)
+    socket.on('joinItemRoom', (itemId) => {
+        socket.join(`item-${itemId}`);
+        console.log(`Client ${socket.id} joined room item-${itemId}`);
+    });
+
+    // Leave a room
+    socket.on('leaveItemRoom', (itemId) => {
+        socket.leave(`item-${itemId}`);
+        console.log(`Client ${socket.id} left room item-${itemId}`);
+    });
+
+    socket.on('disconnect', () => {
+        console.log(`Client disconnected: ${socket.id}`);
+    });
+});
+
+// Express app configuration
 app.set('trust proxy', true);
 
 // Middleware
@@ -28,8 +50,8 @@ app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: t
 app.use('/assignment4', express.static(path.join(__dirname, 'public')));
 
 // Set the views directory and EJS as the view engine
-app.set('views', path.join(__dirname, 'views'));  // Path to your views folder
-app.set('view engine', 'ejs');  // Set EJS as the template engine
+app.set('views', path.join(__dirname, 'views')); // Path to your views folder
+app.set('view engine', 'ejs'); // Set EJS as the template engine
 
 // Log requests to the console
 app.use((req, res, next) => {
@@ -37,27 +59,20 @@ app.use((req, res, next) => {
     next();
 });
 
-app._router.stack.forEach((middleware) => {
-    if (middleware.route) {
-        console.log(middleware.route.path);
-    }
-});
-
-
 // Default route to redirect to the index page
 app.get('/assignment4', (req, res) => {
-    console.log("Routing to index.js");
+    console.log('Routing to index.js');
     const items = [
         { name: 'Antique Vase', price: '100' },
         { name: 'Vintage Watch', price: '250' },
-        { name: 'Signed Football', price: '75' }
+        { name: 'Signed Football', price: '75' },
     ];
 
     res.render('index', {
         pageTitle: 'Auction Site Home',
         headerText: 'Welcome to the Auction Site',
         featuredHeading: 'Featured Items',
-        items
+        items,
     });
 });
 
@@ -69,7 +84,6 @@ app.use('/assignment4/dashboard', require('./routes/dashboard'));
 app.use('/assignment4/search', require('./routes/search'));
 app.use('/assignment4/transaction', require('./routes/transaction'));
 app.use('/assignment4/api', require('./routes/payment'));
-
 
 // Error Handling Middleware
 app.use(notFound);

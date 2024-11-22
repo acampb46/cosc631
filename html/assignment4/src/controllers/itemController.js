@@ -3,10 +3,8 @@ const Item = require('../models/Item');
 const itemController = {
     async create(req, res, next) {
         try {
-            const { title, description, price, quantity, category, startingBid, auctionEnd } = req.body;
+            const { title, description, price, quantity, imageUrl, category, startingBid, auctionEnd } = req.body;
             const sellerId = req.session.userId; // Get user ID from session
-            const imageUrl = req.file ? `/images/${req.file.filename}` : null; // Handle uploaded file
-            console.log("Uploaded file info:", req.file);
 
             const itemId = await Item.create({ title, description, price, quantity, sellerId, imageUrl, category, startingBid, auctionEnd });
             res.status(201).send({ message: 'Item created successfully', itemId });

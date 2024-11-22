@@ -9,7 +9,7 @@ router.get('/submit', (req, res) => {
     });
 });
 
-router.post('/create', async (req, res) => {
+router.post('/create', async (req, res, next) => {
     try {
         const {title, description, category, price, startingBid, auctionEnd, quantity, imageUrl} = req.body;
 

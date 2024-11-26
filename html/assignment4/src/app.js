@@ -21,7 +21,7 @@ const server = https.createServer(options, app);
 app.set('trust proxy', true);
 
 const corsOptions = {
-    origin: "https://gerardcosc631.com", // Client origin
+    origin: "*", // Client origin
     methods: ["GET", "POST"],
     credentials: true
 };

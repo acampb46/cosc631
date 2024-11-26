@@ -25,9 +25,10 @@
             <div class="row g-0">
                 <div class="col-md-4">
                     <% if (item.image_url) { %>
-                    <img src="<%= item.image_url %>" class="img-fluid rounded-start" alt="Item Image">
+                        <img src="<%= item.image_url %>" class="img-fluid rounded-start" alt="Item Image">
                     <% } else { %>
-                    <img src="./../../public/images/placeholder.png" class="img-fluid rounded-start" alt="Placeholder Image">
+                        <img src="./../../public/images/placeholder.png" class="img-fluid rounded-start"
+                             alt="Placeholder Image">
                     <% } %>
                 </div>
                 <div class="col-md-8">
@@ -48,7 +49,8 @@
             <h2>Place a Bid</h2>
             <form id="bid-form" class="row g-3">
                 <div class="col-md-6">
-                    <input type="number" id="bidAmount" name="bidAmount" class="form-control" placeholder="Enter your bid" required>
+                    <input type="number" id="bidAmount" name="bidAmount" class="form-control"
+                           placeholder="Enter your bid" required>
                 </div>
                 <div class="col-md-6">
                     <button type="submit" class="btn btn-primary">Place Bid</button>
@@ -64,7 +66,8 @@
             <h2>Buy Now</h2>
             <form id="buy-form" class="row g-3">
                 <div class="col-md-6">
-                    <input type="number" id="buyQuantity" name="quantity" class="form-control" placeholder="Enter quantity" required>
+                    <input type="number" id="buyQuantity" name="quantity" class="form-control"
+                           placeholder="Enter quantity" required>
                 </div>
                 <div class="col-md-6">
                     <button type="submit" class="btn btn-success">Buy Now</button>
@@ -86,9 +89,9 @@
 <script>
     const itemId = "<%= item.id %>";
     const socket = io('https://gerardcosc631.com:12348', {
-    withCredentials: true,
-    transports: ["websocket", "polling"]
-});
+        withCredentials: true,
+        transports: ["websocket", "polling"]
+    });
 
     socket.on('connect', () => {
         console.log('Connected to the server via Socket.IO');
@@ -104,46 +107,54 @@
         }
     }
 
-    document.getElementById('bid-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const bidAmount = document.getElementById('bidAmount').value;
+    const bidForm = document.getElementById('bid-form');
+    if (bidForm) {
+        console.log("Processing bid form.");
+        bidForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const bidAmount = document.getElementById('bidAmount').value;
 
-        try {
-            const response = await fetch('/assignment4/bids/place', {
+            try {
+                const response = await fetch('/assignment4/bids/place', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({itemId, bidAmount}),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert(`Failed to place bid: ${errorData.message}`);
+                } else {
+                    alert('Bid placed successfully!');
+                }
+            } catch (error) {
+                console.error('Network or server error:', error);
+                alert('There was an error processing your bid. Please try again.');
+            }
+        });
+    }
+
+    const buyForm = document.getElementById('buy-form');
+    if(buyForm) {
+        console.log("Processing buy form.");
+        buyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const quantity = document.getElementById('buyQuantity').value;
+
+            const response = await fetch('/assignment4/purchase/buy', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ itemId, bidAmount }),
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({itemId, quantity}),
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                alert(`Failed to place bid: ${errorData.message}`);
+            if (response.ok) {
+                alert('Purchase successful!');
             } else {
-                alert('Bid placed successfully!');
+                const errorData = await response.json();
+                alert(`Failed to purchase item: ${errorData.message}`);
             }
-        } catch (error) {
-            console.error('Network or server error:', error);
-            alert('There was an error processing your bid. Please try again.');
-        }
-    });
-
-    document.getElementById('buy-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const quantity = document.getElementById('buyQuantity').value;
-
-        const response = await fetch('/assignment4/purchase/buy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ itemId, quantity }),
         });
-
-        if (response.ok) {
-            alert('Purchase successful!');
-        } else {
-            const errorData = await response.json();
-            alert(`Failed to purchase item: ${errorData.message}`);
-        }
-    });
+    }
 
     socket.emit('joinItemRoom', itemId);
 

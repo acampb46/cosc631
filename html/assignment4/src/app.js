@@ -15,7 +15,7 @@ const options = {
 
 const app = express();
 const server = https.createServer(options, app);
-const io = require('socket')(server); // Attach Socket.IO to the server
+const io = require('./socket')(server); // Attach Socket.IO to the server
 
 // Socket.IO logic
 io.on('connection', (socket) => {

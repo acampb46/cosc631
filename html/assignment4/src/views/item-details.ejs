@@ -86,7 +86,8 @@
 <script>
     const itemId = "<%= item.id %>";
     const socket = io('https://gerardcosc631.com:12348', {
-    withCredentials: true
+    withCredentials: true,
+    transports: ["websocket", "polling"]
 });
 
     socket.on('connect', () => {

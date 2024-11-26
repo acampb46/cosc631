@@ -15,28 +15,7 @@ const options = {
 
 const app = express();
 const server = https.createServer(options, app);
-const io = require('./socket')(server); // Attach Socket.IO to the server
-
-// Socket.IO logic
-io.on('connection', (socket) => {
-    console.log(`New client connected: ${socket.id}`);
-
-    // Join a room for an item (used for bidding updates)
-    socket.on('joinItemRoom', (itemId) => {
-        socket.join(`item-${itemId}`);
-        console.log(`Client ${socket.id} joined room item-${itemId}`);
-    });
-
-    // Leave a room
-    socket.on('leaveItemRoom', (itemId) => {
-        socket.leave(`item-${itemId}`);
-        console.log(`Client ${socket.id} left room item-${itemId}`);
-    });
-
-    socket.on('disconnect', () => {
-        console.log(`Client disconnected: ${socket.id}`);
-    });
-});
+const io = require('./src/socket')(server); // Attach Socket.IO to the server
 
 // Express app configuration
 app.set('trust proxy', true);

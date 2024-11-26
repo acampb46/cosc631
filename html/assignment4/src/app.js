@@ -15,13 +15,23 @@ const options = {
 
 const app = express();
 const server = https.createServer(options, app);
-const io = require('./socket')(server); // Attach Socket.IO to the server
+
 
 // Express app configuration
 app.set('trust proxy', true);
 
+const corsOptions = {
+    origin: "http://gerardcosc631.com:12348", // Client origin
+    methods: ["GET", "POST"],
+    credentials: true
+};
+
+app.use(cors(corsOptions));
+const io = require('./socket')(server, {
+    cors: corsOptions
+}); // Attach Socket.IO to the server
+
 // Middleware
-app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: true }));

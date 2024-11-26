@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const https = require('https');
 const fs = require('fs');
-//const socketIo = require('socket.io');
+const cors = require('cors');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
 require('dotenv').config({ path: '../.env' });
 
@@ -21,6 +21,7 @@ const io = require('./socket')(server); // Attach Socket.IO to the server
 app.set('trust proxy', true);
 
 // Middleware
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: true }));

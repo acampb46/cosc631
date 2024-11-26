@@ -15,7 +15,7 @@ const options = {
 
 const app = express();
 const server = https.createServer(options, app);
-const io = require('./src/socket')(server); // Attach Socket.IO to the server
+const io = require('./socket')(server); // Attach Socket.IO to the server
 
 // Express app configuration
 app.set('trust proxy', true);

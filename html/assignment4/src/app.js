@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const https = require('https');
 const fs = require('fs');
-const socketIo = require('./routes/socket.io');
+//const socketIo = require('socket.io');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
 require('dotenv').config({ path: '../.env' });
 
@@ -15,7 +15,7 @@ const options = {
 
 const app = express();
 const server = https.createServer(options, app);
-const io = socketIo(server); // Attach Socket.IO to the server
+const io = require('socket.io')(server); // Attach Socket.IO to the server
 
 // Socket.IO logic
 io.on('connection', (socket) => {

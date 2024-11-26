@@ -85,7 +85,7 @@
 <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
 <script>
     const itemId = "<%= item.id %>";
-    const socket = io();
+    const socket = io('https://gerardcosc631.com:12348');
 
     socket.on('connect', () => {
         console.log('Connected to the server via Socket.IO');

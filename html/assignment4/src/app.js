@@ -76,7 +76,6 @@ app.use('/assignment4/search', require('./routes/search'));
 app.use('/assignment4/payment', require('./routes/payment'));
 app.use('/assignment4/purchase', require('./routes/purchase'));
 app.use('/assignment4/transaction', require('./routes/transaction'));
-app.use('/assignment4/api', require('./routes/payment'));
 
 // Error Handling Middleware
 app.use(notFound);

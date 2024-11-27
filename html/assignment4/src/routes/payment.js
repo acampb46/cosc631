@@ -6,7 +6,12 @@ const router = express.Router();
 // Render paymentForm.ejs
 router.get("/create",(req, res) => {
     console.log("Rendering Payment Form...");
-    res.render('paymentForm');
+    res.render('paymentForm', {
+        buyerId: req.session.userId,
+        sellerId: item.seller_id,
+        itemId: itemId,
+        amount: item.price,
+    });
 })
 
 // Route to create a payment

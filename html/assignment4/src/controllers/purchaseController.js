@@ -1,13 +1,13 @@
 const db = require('../config/db');
-const axios = require('axios');
 const transactionController = require('../controllers/transactionController');
 const { createTransaction } = require('../models/Transaction');
 
 const purchaseController = {
     async buyNow(req, res, next) {
         console.log("Entering buyNow logic");
-        const { quantity, paymentToken } = req.body;
-        const userId = req.session.userId;
+
+        const { quantity } = req.body; // No paymentToken at this stage
+        const userId = req.session.userId; // Assuming the user is authenticated
         const itemId = parseInt(req.body.itemId, 10);
 
         try {
@@ -21,57 +21,16 @@ const purchaseController = {
             // Step 2: Calculate total price
             const totalPrice = item.price * quantity;
 
-            // Step 3: Create the transaction
+            // Step 3: Create the transaction record
             const transactionResponse = await createTransaction(userId, item.seller_id, itemId, totalPrice);
-            const { transactionId } = transactionResponse; // Extract the transactionId
+            const { transactionId } = transactionResponse;
 
-            // Step 4: Process payment via `/payment/create`
-            const paymentResponse = await axios.post('https://gerardcosc631.com/assignment4/payment/create', {
-                transactionId,
+            // Step 4: Redirect the user to the payment form
+            res.render('paymentForm', {
+                buyerId: userId,
+                sellerId: item.seller_id,
+                itemId,
                 amount: totalPrice,
-                paymentToken,
-            }, {
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            if (paymentResponse.status !== 200) {
-                throw new Error(`Payment failed: ${paymentResponse.data.message}`);
-            }
-
-            console.log('Payment successful:', paymentResponse.data);
-
-            // Step 5: Deduct item quantity
-            await db.execute('UPDATE items SET quantity = quantity - ? WHERE id = ?', [quantity, itemId]);
-
-            // Step 6: Emit real-time update for quantity (ensure `io` is available)
-            if (typeof io !== 'undefined') {
-                io.to(`item-${itemId}`).emit('quantityUpdated', {
-                    itemId,
-                    newQuantity: item.quantity - quantity,
-                });
-            }
-
-            // Step 7: Send email notifications
-            const buyerEmail = req.session.userEmail;
-            const sellerEmail = await getSellerEmail(item.seller_id);
-            const itemTitle = item.title;
-
-            await Promise.all([
-                transactionController.sendEmail(
-                    buyerEmail,
-                    'Purchase Confirmation',
-                    `You have successfully purchased "${itemTitle}" for $${totalPrice}.`
-                ),
-                transactionController.sendEmail(
-                    sellerEmail,
-                    'Sale Notification',
-                    `Your item "${itemTitle}" has been sold for $${totalPrice}.`
-                ),
-            ]);
-
-            // Final success response
-            res.status(201).send({
-                message: 'Purchase successful',
                 transactionId,
             });
         } catch (error) {
@@ -80,11 +39,5 @@ const purchaseController = {
         }
     },
 };
-
-// Helper function to get seller email
-async function getSellerEmail(sellerId) {
-    const [sellerRows] = await db.execute('SELECT email FROM users WHERE id = ?', [sellerId]);
-    return sellerRows.length ? sellerRows[0].email : null;
-}
 
 module.exports = purchaseController;

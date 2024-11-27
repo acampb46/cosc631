@@ -13,3 +13,5 @@ const transactionController = {
         await transporter.sendMail({ from: process.env.EMAIL, to, subject, text });
     },
 };
+
+module.exports = transactionController;

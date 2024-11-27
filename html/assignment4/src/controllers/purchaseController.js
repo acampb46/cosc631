@@ -24,15 +24,14 @@ const purchaseController = {
 
             // Create the transaction first
             const transactionResponse = await axios.post('https://gerardcosc631.com/assignment4/transaction/create', {
+                amount: totalPrice,
+                buyerId: userId,
+                sellerId: item.seller_id,
+                itemId,
+            }, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    amount: totalPrice,
-                    buyerId: userId,
-                    sellerId: item.seller_id,
-                    itemId
-                }),
             });
 
             if (!transactionResponse.ok) {

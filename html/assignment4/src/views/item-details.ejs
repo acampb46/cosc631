@@ -133,7 +133,7 @@
             e.preventDefault();
             const quantity = document.getElementById('buyQuantity').value;
 
-            const response = await fetch('/assignment4/purchase/buyNow', {
+            const response = await fetch('/assignment4/purchase/buy', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({itemId, quantity}),

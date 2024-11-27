@@ -2,6 +2,6 @@ const express = require('express');
 const router = express.Router();
 const purchaseController = require('../controllers/purchaseController');
 
-router.post('/buyNow', purchaseController.buyNow);
+router.post('/buy', purchaseController.buyNow);
 
 module.exports = router;

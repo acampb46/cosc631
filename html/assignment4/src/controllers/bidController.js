@@ -10,7 +10,7 @@ const bidController = {
             const bidId = await Bid.placeBid({ itemId, userId, bidAmount });
 
             // Notify other clients about the new highest bid
-            io.to(`item-${itemId}`).emit('newBid', { itemId, bidAmount, userId });
+            //io.to(`item-${itemId}`).emit('newBid', { itemId, bidAmount, userId });
 
             res.status(201).send({ message: 'Bid placed successfully', bidId });
         } catch (error) {

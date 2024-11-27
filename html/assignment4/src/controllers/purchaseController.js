@@ -12,7 +12,7 @@ const purchaseController = {
 
         try {
             // Step 1: Validate item availability
-            const [itemRows] = await db.execute('SELECT * FROM items WHERE id = ?', [itemId]);
+            const [itemRows] = await db.execute('SELECT * FROM items WHERE id = ? AND status= ?', [itemId, 'available']);
             const item = itemRows[0];
 
             if (!item) return res.status(404).send({ message: 'Item not found' });
@@ -45,14 +45,11 @@ const purchaseController = {
 
             // Step 4: Process payment via `/payment/create`
             // Use the transactionId for the payment
-            const paymentResponse = await fetch('/assignment4/payment/create', {
-                method: 'POST',
+            const paymentResponse = await axios.post('https://gerardcosc631.com/assignment4/payment/create', {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    transactionId,
-                }),
+                transactionId: transactionId,
             });
 
             if (!paymentResponse.ok) {

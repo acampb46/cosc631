@@ -126,7 +126,7 @@
     }
 
     const buyForm = document.getElementById('buy-form');
-    if(buyForm) {
+    if (buyForm) {
         console.log("Processing buy form.");
         buyForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -160,7 +160,7 @@
     socket.emit('joinItemRoom', itemId, () => {
         socket.join(`item-${itemId}`);
         console.log(`Joined room for item ${itemId}`);
-        if(bidForm) {
+        if (bidForm) {
             fetchHighestBid();
         }
 
@@ -177,8 +177,6 @@
             document.getElementById('highest-bid').textContent = data.bidAmount;
         }
     });
-
-    fetchHighestBid();
 
     window.addEventListener('beforeunload', () => {
         socket.emit('leaveItemRoom', itemId);

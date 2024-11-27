@@ -6,6 +6,7 @@ const router = express.Router();
 // Create a transaction (purchase or auction win)
 router.post('/create', async (req, res) => {
     console.log("Entering transaction creation.");
+    console.log("Transaction Request Body: " + req.body);
     const { buyerId, sellerId, itemId, amount } = req.body;
 
     try {

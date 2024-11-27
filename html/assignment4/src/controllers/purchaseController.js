@@ -35,12 +35,13 @@ const purchaseController = {
                 },
             });
 
-            if (!transactionResponse.ok) {
-                const errorData = await transactionResponse.json();
+            // Check for error in response
+            if (transactionResponse.status !== 200) {
+                const errorData = transactionResponse.data;
                 throw new Error(`Transaction creation failed: ${errorData.message}`);
             }
 
-            const { transactionId } = await transactionResponse.json(); // Extract the transactionId
+            const { transactionId } = await transactionResponse.transactionId; // Extract the transactionId
 
             // Step 4: Process payment via `/payment/create`
             // Use the transactionId for the payment

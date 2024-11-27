@@ -156,7 +156,10 @@
         });
     }
 
-    socket.emit('joinItemRoom', itemId);
+    socket.emit('joinItemRoom', itemId, () => {
+        console.log(`Joined room for item ${itemId}`);
+        fetchHighestBid();
+    });
 
     socket.on('quantityUpdated', (data) => {
         if (data.itemId === itemId) {

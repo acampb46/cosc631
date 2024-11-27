@@ -151,7 +151,7 @@
         try {
             const response = await fetch(`/assignment4/bids/highest/${itemId}`);
             const data = await response.json();
-            document.getElementById('highest-bid').textContent = data.amount ? data.amount : 'No bids yet';
+            document.getElementById('highest-bid').textContent = data.bid_amount ? data.bid_amount : 'No bids yet';
         } catch (error) {
             console.error('Failed to fetch highest bid:', error);
         }

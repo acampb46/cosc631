@@ -100,6 +100,7 @@
 
     const bidForm = document.getElementById('bid-form');
     if (bidForm) {
+        fetchHighestBid();
         console.log("Processing bid form.");
         bidForm.addEventListener('submit', async (e) => {
             e.preventDefault();

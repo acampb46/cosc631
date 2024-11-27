@@ -101,7 +101,7 @@
         try {
             const response = await fetch(`/assignment4/bids/highest/${itemId}`);
             const data = await response.json();
-            document.getElementById('highest-bid').textContent = data.amount ? data.amount : 'No bids yet';
+            document.getElementById('highest-bid').textContent = data.highestBid ? data.highestBid : 'No bids yet';
         } catch (error) {
             console.error('Failed to fetch highest bid:', error);
         }
@@ -158,7 +158,10 @@
 
     socket.emit('joinItemRoom', itemId, () => {
         console.log(`Joined room for item ${itemId}`);
-        fetchHighestBid();
+        if(bidForm) {
+            fetchHighestBid();
+        }
+
     });
 
     socket.on('quantityUpdated', (data) => {

@@ -97,15 +97,6 @@
         console.log('Connected to the server via Socket.IO');
     });
 
-    async function fetchHighestBid() {
-        try {
-            const response = await fetch(`/assignment4/bids/highest/${itemId}`);
-            const data = await response.json();
-            document.getElementById('highest-bid').textContent = data.highestBid ? data.highestBid : 'No bids yet';
-        } catch (error) {
-            console.error('Failed to fetch highest bid:', error);
-        }
-    }
 
     const bidForm = document.getElementById('bid-form');
     if (bidForm) {
@@ -156,7 +147,18 @@
         });
     }
 
+    async function fetchHighestBid() {
+        try {
+            const response = await fetch(`/assignment4/bids/highest/${itemId}`);
+            const data = await response.json();
+            document.getElementById('highest-bid').textContent = data.amount ? data.amount : 'No bids yet';
+        } catch (error) {
+            console.error('Failed to fetch highest bid:', error);
+        }
+    }
+
     socket.emit('joinItemRoom', itemId, () => {
+        socket.join(`item-${itemId}`);
         console.log(`Joined room for item ${itemId}`);
         if(bidForm) {
             fetchHighestBid();

@@ -73,6 +73,7 @@ app.use('/assignment4/items', require('./routes/items'));
 app.use('/assignment4/bids', require('./routes/bids'));
 app.use('/assignment4/dashboard', require('./routes/dashboard'));
 app.use('/assignment4/search', require('./routes/search'));
+app.use('/assignment4/payment', require('./routes/payment'));
 app.use('/assignment4/purchase', require('./routes/purchase'));
 app.use('/assignment4/transaction', require('./routes/transaction'));
 app.use('/assignment4/api', require('./routes/payment'));

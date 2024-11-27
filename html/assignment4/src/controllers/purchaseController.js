@@ -6,8 +6,9 @@ const { createTransaction } = require('../models/Transaction');
 const purchaseController = {
     async buyNow(req, res, next) {
         console.log("Entering buyNow logic");
-        const { itemId, quantity, paymentToken } = req.body;
+        const {quantity, paymentToken } = req.body;
         const userId = req.session.userId;
+        const itemId = parseInt(req.body.itemId, 10);
 
         try {
             // Step 1: Validate item availability

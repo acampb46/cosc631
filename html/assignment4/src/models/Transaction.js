@@ -8,6 +8,8 @@ module.exports = {
         const commission = amount * 0.05; // 5% commission
         const totalAmount = amount - commission; // Seller gets the total amount minus the commission
 
+        console.log("Creating Transaction...");
+
         try {
             // Start a database transaction
             const [result] = await db.execute(

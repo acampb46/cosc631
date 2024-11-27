@@ -31,7 +31,7 @@ const purchaseController = {
                 body: JSON.stringify({
                     amount: totalPrice,
                     buyerId: userId,
-                    sellerId: item.seller_id, // Ensure this is available
+                    sellerId: item.seller_id,
                     itemId
                 }),
             });

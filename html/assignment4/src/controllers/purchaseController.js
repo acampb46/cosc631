@@ -22,26 +22,46 @@ const purchaseController = {
             // Step 2: Calculate total price
             const totalPrice = item.price * quantity;
 
-            // Step 3: Process payment via `/payment/create`
-            const paymentResponse = await axios.post(`/assignment4/payment/create`, {
-                amount: totalPrice,
-                token: paymentToken,
-                buyerId: userId,
-                sellerId: item.seller_id, // Assuming items table has a seller_id column
-                itemId,
+            // Create the transaction first
+            const transactionResponse = await fetch('/assignment4/transaction/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    amount: totalPrice,
+                    buyerId: userId,
+                    sellerId: item.seller_id, // Ensure this is available
+                    itemId
+                }),
             });
 
-            if (paymentResponse.status !== 200 || paymentResponse.data.paymentIntent.status !== 'succeeded') {
-                return res.status(400).send({ message: 'Payment failed' });
+            if (!transactionResponse.ok) {
+                const errorData = await transactionResponse.json();
+                throw new Error(`Transaction creation failed: ${errorData.message}`);
             }
 
-            // Step 4: Create a transaction
-            const transaction = await createTransaction(
-                userId,
-                item.seller_id,
-                itemId,
-                totalPrice
-            );
+            const { transactionId } = await transactionResponse.json(); // Extract the transactionId
+
+            // Step 4: Process payment via `/payment/create`
+            // Use the transactionId for the payment
+            const paymentResponse = await fetch('/assignment4/payment/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    transactionId,
+                }),
+            });
+
+            if (!paymentResponse.ok) {
+                const errorData = await paymentResponse.json();
+                throw new Error(`Payment failed: ${errorData.message}`);
+            }
+
+            const paymentResult = await paymentResponse.json();
+            console.log('Payment successful:', paymentResult);
 
             // Step 5: Deduct item quantity
             await db.execute('UPDATE items SET quantity = quantity - ? WHERE id = ?', [quantity, itemId]);
@@ -70,7 +90,7 @@ const purchaseController = {
 
             res.status(201).send({
                 message: 'Purchase successful',
-                transactionId: transaction.transactionId,
+                transactionId: transactionId,
             });
         } catch (error) {
             console.error('Error during purchase:', error);

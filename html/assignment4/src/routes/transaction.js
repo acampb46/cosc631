@@ -4,7 +4,7 @@ const { createTransaction, completeTransaction, getTransactionDetails } = requir
 const router = express.Router();
 
 // Create a transaction (purchase or auction win)
-router.post('/transaction/create', async (req, res) => {
+router.post('/create', async (req, res) => {
     const { buyerId, sellerId, itemId, amount } = req.body;
 
     try {
@@ -16,7 +16,7 @@ router.post('/transaction/create', async (req, res) => {
 });
 
 // Complete a transaction (e.g., after payment is processed)
-router.post('/transaction/complete', async (req, res) => {
+router.post('/complete', async (req, res) => {
     const { transactionId } = req.body;
 
     try {
@@ -28,7 +28,7 @@ router.post('/transaction/complete', async (req, res) => {
 });
 
 // Get transaction details by ID
-router.get('/transaction/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {

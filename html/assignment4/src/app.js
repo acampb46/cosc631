@@ -5,8 +5,8 @@ const session = require('express-session');
 const https = require('https');
 const fs = require('fs');
 const cors = require('cors');
-const { notFound, errorHandler } = require('./middlewares/errorHandler');
-require('dotenv').config({ path: '../.env' });
+const {notFound, errorHandler} = require('./middlewares/errorHandler');
+require('dotenv').config({path: '../.env'});
 
 const options = {
     key: fs.readFileSync('/var/www/key/gerardcosc631_com.key'),
@@ -22,19 +22,21 @@ app.set('trust proxy', true);
 
 const corsOptions = {
     origin: "*", // Client origin
-    methods: ["GET", "POST"],
-    credentials: true
+    methods: ["GET", "POST"], credentials: true
 };
 
 app.use(cors(corsOptions));
+// Attach Socket.IO to the server
 const io = require('./socket')(server, {
     cors: corsOptions
-}); // Attach Socket.IO to the server
+});
+// Make the io instance globally accessible
+app.set('io', io);
 
 // Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
-app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: true }));
+app.use(session({secret: 'your-secret-key', resave: false, saveUninitialized: true}));
 
 // Static Files
 app.use('/assignment4', express.static(path.join(__dirname, 'public')));
@@ -52,11 +54,10 @@ app.use((req, res, next) => {
 // Default route to redirect to the index page
 app.get('/assignment4', (req, res) => {
     console.log('Routing to index.js');
-    const items = [
-        { name: 'Antique Vase', price: '100' },
-        { name: 'Vintage Watch', price: '250' },
-        { name: 'Signed Football', price: '75' },
-    ];
+    const items = [{name: 'Antique Vase', price: '100'}, {
+        name: 'Vintage Watch',
+        price: '250'
+    }, {name: 'Signed Football', price: '75'},];
 
     res.render('index', {
         pageTitle: 'Auction Site Home',

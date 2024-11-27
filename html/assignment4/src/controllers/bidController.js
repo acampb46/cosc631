@@ -9,8 +9,11 @@ const bidController = {
             // Place the bid
             const bidId = await Bid.placeBid({ itemId, userId, bidAmount });
 
+            // Grab io from app
+            const io = req.app.get('io');
+
             // Notify other clients about the new highest bid
-            //io.to(`item-${itemId}`).emit('newBid', { itemId, bidAmount, userId });
+            io.to(`item-${itemId}`).emit('newBid', { itemId, bidAmount, userId });
 
             res.status(201).send({ message: 'Bid placed successfully', bidId });
         } catch (error) {

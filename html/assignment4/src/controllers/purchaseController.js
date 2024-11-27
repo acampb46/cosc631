@@ -23,8 +23,7 @@ const purchaseController = {
             const totalPrice = item.price * quantity;
 
             // Create the transaction first
-            const transactionResponse = await fetch('/assignment4/transaction/create', {
-                method: 'POST',
+            const transactionResponse = await axios.post('https://gerardcosc631.com/assignment4/transaction/create', {
                 headers: {
                     'Content-Type': 'application/json',
                 },

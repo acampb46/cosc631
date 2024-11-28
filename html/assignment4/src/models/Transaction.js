@@ -1,6 +1,5 @@
-// models/Transaction.js
 const db = require('../config/db'); // Your database connection
-const { sendEmail, sendTextMessage } = require('../utils/notificationUtils'); // Optional notification utility
+const { sendEmail } = require('../utils/notificationUtils'); // Optional notification utility
 
 module.exports = {
     // Create a transaction
@@ -20,32 +19,7 @@ module.exports = {
             // Get the transaction ID
             const transactionId = result.insertId;
 
-            // Optionally, send email or SMS notifications to buyer and seller
-            const item = await db.execute('SELECT title FROM items WHERE id = ?', [itemId]);
-            const itemTitle = item[0][0].title;
-
-            const buyer = await db.execute('SELECT email FROM users WHERE id = ?', [buyerId]);
-            const seller = await db.execute('SELECT email FROM users WHERE id = ?', [sellerId]);
-
-            const buyerEmail = buyer[0][0].email;
-            const sellerEmail = seller[0][0].email;
-
-            // Send transaction confirmation emails (or SMS)
-            await sendEmail(
-                buyerEmail,
-                'Transaction Confirmation',
-                `You have successfully purchased "${itemTitle}" for $${amount}. The seller will be notified of the transaction.`
-            );
-            await sendEmail(
-                sellerEmail,
-                'Transaction Confirmation',
-                `You have successfully sold "${itemTitle}" for $${amount}. The buyer has been notified of the transaction.`
-            );
-
-            // After a successful transaction, update the item status to sold or completed
-            await db.execute('UPDATE items SET status = ? WHERE id = ?', ['sold',itemId]);
-
-            // Return transaction details
+            // Return transaction details (without sending notifications)
             return {
                 transactionId,
                 buyerId,
@@ -54,7 +28,7 @@ module.exports = {
                 amount,
                 commission,
                 totalAmount,
-                status: 'pending', // Initially, pending until confirmed or processed
+                status: 'pending', // Initially pending until payment is processed
             };
         } catch (error) {
             console.error('Error creating transaction:', error);
@@ -62,21 +36,59 @@ module.exports = {
         }
     },
 
-    // Complete a transaction
+    // Complete a transaction (sends notifications)
     completeTransaction: async (transactionId) => {
         try {
             // Update the status of the transaction to 'completed'
-            const [result] = await db.execute(
+            const [updateResult] = await db.execute(
                 'UPDATE transactions SET status = ? WHERE id = ?',
-                ['completed',transactionId]
+                ['completed', transactionId]
             );
 
-            if (result.affectedRows === 0) {
+            if (updateResult.affectedRows === 0) {
                 throw new Error('Transaction not found');
             }
 
-            // You can add other logic here, such as updating user balances, etc.
-            return { transactionId, status: 'completed' };
+            // Fetch transaction details
+            const [transactionRows] = await db.execute(
+                'SELECT * FROM transactions WHERE id = ?',
+                [transactionId]
+            );
+            const transaction = transactionRows[0];
+
+            // Fetch additional details
+            const [itemRows] = await db.execute('SELECT title FROM items WHERE id = ?', [transaction.item_id]);
+            const itemTitle = itemRows[0].title;
+
+            const [buyerRows] = await db.execute('SELECT email FROM users WHERE id = ?', [transaction.buyer_id]);
+            const [sellerRows] = await db.execute('SELECT email FROM users WHERE id = ?', [transaction.seller_id]);
+
+            const buyerEmail = buyerRows[0].email;
+            const sellerEmail = sellerRows[0].email;
+
+            // Send email notifications to both buyer and seller
+            await Promise.all([
+                sendEmail(
+                    buyerEmail,
+                    'Purchase Confirmation',
+                    `You have successfully purchased "${itemTitle}" for $${transaction.amount}.`
+                ),
+                sendEmail(
+                    sellerEmail,
+                    'Sale Notification',
+                    `Your item "${itemTitle}" has been sold for $${transaction.amount}.`
+                ),
+            ]);
+
+            // Return the completed transaction details
+            return {
+                transactionId,
+                status: 'completed',
+                buyerId: transaction.buyer_id,
+                sellerId: transaction.seller_id,
+                itemId: transaction.item_id, // Needed for quantity update
+                amount: transaction.amount,
+            };
         } catch (error) {
             console.error('Error completing transaction:', error);
             throw new Error('Transaction completion failed');

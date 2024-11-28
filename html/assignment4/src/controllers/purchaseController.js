@@ -25,6 +25,16 @@ const purchaseController = {
             const transactionResponse = await createTransaction(userId, item.seller_id, itemId, totalPrice);
             const { transactionId } = transactionResponse;
 
+
+            console.log({
+                buyerId: userId,
+                sellerId: item.seller_id,
+                itemId,
+                amount: totalPrice,
+                transactionId,
+            });
+
+            
             // Step 4: Redirect the user to the payment form
             console.log("Rendering Payment form");
             res.render('paymentForm', {

@@ -26,6 +26,7 @@ const purchaseController = {
             const { transactionId } = transactionResponse;
 
             // Step 4: Redirect the user to the payment form
+            console.log('Rendering Payment form");
             res.render('paymentForm', {
                 buyerId: userId,
                 sellerId: item.seller_id,

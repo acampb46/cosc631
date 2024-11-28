@@ -39,37 +39,47 @@
     paymentForm.addEventListener('submit', async (event) => {
         event.preventDefault();
 
-        // Extract hidden inputs
         const buyerId = document.getElementById('buyerId').value;
         const sellerId = document.getElementById('sellerId').value;
         const itemId = document.getElementById('itemId').value;
         const amount = document.getElementById('amount').value;
 
-        // Create a token using the card Element
-        const { token, error } = await stripe.createToken(cardElement);
+        if (!buyerId || !sellerId || !itemId || amount <= 0) {
+            alert('Invalid payment details.');
+            return;
+        }
 
+        const { token, error } = await stripe.createToken(cardElement);
         if (error) {
             alert('Error: ' + error.message);
-        } else {
-            // Send the token and transaction data to the backend
-            const paymentData = { token: token.id, buyerId, sellerId, itemId, amount };
+            return;
+        }
 
+        submitButton.disabled = true;
+        submitButton.textContent = 'Processing...';
+
+        try {
             const response = await fetch('/assignment4/transaction/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(paymentData),
+                body: JSON.stringify({ token: token.id, buyerId, sellerId, itemId, amount }),
             });
 
             const result = await response.json();
             if (response.ok) {
                 alert('Transaction Successfully Created!');
+                window.location.href = '/success'; // Redirect on success
             } else {
-                alert('Payment failed: ' + result.message);
+                alert('Payment failed: ' + (result.message || 'Unknown error'));
             }
+        } catch (err) {
+            alert('An unexpected error occurred: ' + err.message);
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Pay';
         }
     });
 </script>
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

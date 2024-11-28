@@ -3,16 +3,6 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../config/db'); // Database connection
 const router = express.Router();
 
-// Render paymentForm.ejs
-router.get("/create",(req, res) => {
-    console.log("Rendering Payment Form...");
-    res.render('paymentForm', {
-        buyerId: req.session.userId,
-        sellerId: item.seller_id,
-        itemId: itemId,
-        amount: item.price,
-    });
-})
 
 // Route to create a payment
 router.post('/create', async (req, res) => {

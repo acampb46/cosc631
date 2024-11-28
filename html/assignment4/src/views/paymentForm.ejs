@@ -62,9 +62,7 @@
 
             const result = await response.json();
             if (response.ok) {
-                alert('Payment successful!');
-                // Optionally redirect the user
-                window.location.href = `/transaction/success/${result.transactionId}`;
+                alert('Transaction Successfully Created!');
             } else {
                 alert('Payment failed: ' + result.message);
             }

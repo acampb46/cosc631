@@ -6,7 +6,8 @@ const db = require('../config/db'); // Example DB connection
 // Route to create a PaymentIntent and Checkout Session
 router.post('/create-checkout-session', async (req, res) => {
     try {
-        const { amount, itemId, userId, transactionId, quantity } = req.body;
+        const { amount, itemId, transactionId, quantity } = req.body;
+        const userId = req.session.userId; // Assuming the user is authenticated
 
         // Step 1: Create a PaymentIntent
         const paymentIntent = await stripe.paymentIntents.create({

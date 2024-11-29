@@ -57,8 +57,6 @@
 
             if (paymentIntent.status === 'succeeded') {
                 alert('Payment Successful!');
-                // If payment is successful:
-                res.render('success');
             }
         } catch (err) {
             alert('An unexpected error occurred: ' + err.message);

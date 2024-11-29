@@ -140,13 +140,40 @@
             });
 
             if (response.ok) {
-                alert('Purchase successful!');
+                // After the purchase is successful, call createPayment function
+                const data = await response.json();
+                if (data.transactionId) {
+                    await createPayment(data.transactionId); // Trigger payment creation
+                }
             } else {
                 const errorData = await response.json();
                 alert(`Failed to purchase item: ${errorData.message}`);
             }
         });
     }
+
+    // Function to handle the payment creation after a transaction is successfully created
+    async function createPayment(transactionId) {
+        try {
+            const response = await fetch('/assignment4/payment/create', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ transactionId })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                window.location.href = '/assignment4/success';
+            } else {
+                alert(`Payment creation failed: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('Error during payment creation:', error);
+            alert('There was an error while processing the payment.');
+        }
+    }
+
 
     async function fetchHighestBid() {
         try {

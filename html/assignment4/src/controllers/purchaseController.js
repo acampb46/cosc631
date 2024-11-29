@@ -44,7 +44,7 @@ const purchaseController = {
 
             // Step 4: Redirect to the payment form route
             console.log("Redirecting to Payment Creation.");
-            res.redirect(`/payment/create`);
+            res.redirect(`/assignment4/payment/create`);
         } catch (error) {
             console.error('Error during purchase:', error);
             next(error);

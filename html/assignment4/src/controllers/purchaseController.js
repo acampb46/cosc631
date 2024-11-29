@@ -1,5 +1,4 @@
 const db = require('../config/db');
-const axios = require('axios');
 const {createTransaction} = require('../models/Transaction');
 
 const purchaseController = {
@@ -23,10 +22,10 @@ const purchaseController = {
 
             // Step 3: Create the transaction record
             const transactionResponse = await createTransaction(userId, item.seller_id, itemId, totalPrice);
-            const {transactionId} = transactionResponse;
+            const {transactionId} = transactionResponse.transactionId;
 
             // Step 4: Return the transactionId in the response
-            return res.status(200).json({ transactionId });
+            return res.status(200).json({ transactionId});
 
         } catch (error) {
             console.error('Error during purchase:', error);

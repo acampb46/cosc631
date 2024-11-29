@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +9,9 @@
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css"
           integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9"
           crossorigin="anonymous">
+
+    <!-- Stripe -->
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body class="bg-light">
 <div class="container py-4">
@@ -49,6 +52,7 @@
             <h2>Place a Bid</h2>
             <form id="bid-form" class="row g-3">
                 <div class="col-md-6">
+                    <label for="bidAmount"></label>
                     <input type="number" id="bidAmount" name="bidAmount" class="form-control"
                            placeholder="Enter your bid" required>
                 </div>
@@ -70,11 +74,15 @@
                            placeholder="Enter quantity" required>
                 </div>
                 <div class="col-md-6">
-                    <button type="submit" class="btn btn-success">Buy Now</button>
+                    <button type="button" id="checkout-button" class="btn btn-success">Check Out</button>
                 </div>
             </form>
         </section>
     <% } %>
+</div>
+
+<div id="checkout">
+    <!-- Checkout will insert the payment form here -->
 </div>
 
 <footer class="text-center py-3 bg-dark text-light">
@@ -140,12 +148,12 @@
             });
 
             if (response.ok) {
-                // After the purchase is successful, call createPayment function
+                // After the transaction is created, call createPayment function
                 console.log("Transaction successfully created.");
                 const data = await response.json();
                 if (data.transactionId) {
                     console.log("Loading Payment Creation...");
-                    await createPayment(data.transactionId); // Trigger payment creation
+                    await checkout(data.amount, itemId, data.sellerId, data.transactionId, quantity); // Trigger checkout session creation
                 }
             } else {
                 const errorData = await response.json();
@@ -154,27 +162,27 @@
         });
     }
 
-    // Function to handle the payment creation after a transaction is successfully created
-    async function createPayment(transactionId) {
-        try {
-            const response = await fetch('/assignment4/payment/create', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ transactionId })
-            });
+    async function checkout(amount, itemId, userId, transactionId, quantity) {
+        const response = await fetch('/create-checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                amount: amount,
+                itemId: itemId,
+                userId: userId,
+                transactionId: transactionId,
+                quantity: quantity,
+            }),
+        });
 
-            const result = await response.json();
+        const { sessionId } = await response.json();
 
-            if (response.ok) {
-                window.location.href = '/assignment4/success';
-            } else {
-                alert(`Payment creation failed: ${result.message}`);
-            }
-        } catch (error) {
-            console.error('Error during payment creation:', error);
-            alert('There was an error while processing the payment.');
+        const { error } = await stripe.redirectToCheckout({ sessionId });
+        if (error) {
+            console.error('Error during checkout:', error);
         }
     }
+
 
 
     async function fetchHighestBid() {

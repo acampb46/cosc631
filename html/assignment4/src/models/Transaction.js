@@ -19,7 +19,7 @@ module.exports = {
             // Get the transaction ID
             const transactionId = result.insertId;
 
-            // Return transaction details (without sending notifications)
+            // Return transaction details
             return {
                 transactionId,
                 buyerId,

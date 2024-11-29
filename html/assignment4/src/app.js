@@ -77,6 +77,10 @@ app.use('/assignment4/payment', require('./routes/payment'));
 app.use('/assignment4/purchase', require('./routes/purchase'));
 app.use('/assignment4/transaction', require('./routes/transaction'));
 
+//Stripe API Integrated Routes
+app.use('/assignment4/create-checkout-session', require('./routes/create-checkout-session'));
+app.use('/assignment4/success', require('./routes/success'));
+
 // Error Handling Middleware
 app.use(notFound);
 app.use(errorHandler);

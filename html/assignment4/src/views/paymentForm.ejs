@@ -28,7 +28,7 @@
 
 <!-- JavaScript -->
 <script>
-    const stripe = Stripe('pk_live_51QMs0TLXTO62KelJ8rwplryV4kztBPbbNgWTKoy8rN1YVg4eb910IUP7TaSld6OMr3INnB7b0WDXRiCriYwKVthO00PKzeYhK1');
+    const stripe = Stripe(process.env.STRIPE_PUBLIC_KEY);
     const clientSecret = '<%= paymentIntentClientSecret %>'; // Injected by the backend
     const elements = stripe.elements();
     const cardElement = elements.create('card', {style: {base: {fontSize: '16px', color: '#32325d'}}});

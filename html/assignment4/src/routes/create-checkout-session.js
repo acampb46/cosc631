@@ -35,7 +35,7 @@ router.post('/create-checkout-session', async (req, res) => {
             payment_intent_data: {
                 setup_future_usage: 'on_session', // Optional: save card for reuse
             },
-            success_url: `https://gerardcosc631.com/assignment4/success?session_id={CHECKOUT_SESSION_ID}`,
+            success_url: `https://gerardcosc631.com/assignment4/success`,
         });
 
         // Step 3: Store PaymentIntent details in your database (optional)

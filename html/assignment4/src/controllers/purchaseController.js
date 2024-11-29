@@ -1,12 +1,12 @@
 const db = require('../config/db');
-const transactionController = require('../controllers/transactionController');
+const axios = require('axios');
 const { createTransaction } = require('../models/Transaction');
 
 const purchaseController = {
     async buyNow(req, res, next) {
         console.log("Entering buyNow logic");
 
-        const { quantity } = req.body; // No paymentToken at this stage
+        const { quantity } = req.body;
         const userId = req.session.userId; // Assuming the user is authenticated
         const itemId = parseInt(req.body.itemId, 10);
 
@@ -25,7 +25,6 @@ const purchaseController = {
             const transactionResponse = await createTransaction(userId, item.seller_id, itemId, totalPrice);
             const { transactionId } = transactionResponse;
 
-
             console.log({
                 buyerId: userId,
                 sellerId: item.seller_id,
@@ -34,15 +33,25 @@ const purchaseController = {
                 transactionId,
             });
 
-            
-            // Step 4: Redirect the user to the payment form
-            console.log("Rendering Payment form");
+            // Step 4: Call /payment/create to get payment intent
+            const paymentCreateUrl = `https://gerardcosc631.com/assignment4/payment/create`;
+            const paymentResponse = await axios.post(paymentCreateUrl, { transactionId });
+
+            if (paymentResponse.status !== 200) {
+                throw new Error(paymentResponse.data.message || 'Failed to create payment intent');
+            }
+
+            const { paymentIntent } = paymentResponse.data;
+
+            // Step 5: Render the payment form with all required details
+            console.log("Rendering Payment form with payment intent details");
             res.render('paymentForm', {
                 buyerId: userId,
                 sellerId: item.seller_id,
                 itemId,
                 amount: totalPrice,
                 transactionId,
+                clientSecret: paymentIntent.client_secret, // Add this for Stripe PaymentIntent
             });
         } catch (error) {
             console.error('Error during purchase:', error);

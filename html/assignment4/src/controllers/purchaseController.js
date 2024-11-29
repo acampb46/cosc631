@@ -33,18 +33,13 @@ const purchaseController = {
                 transactionId,
             });
 
-            // Store transaction details in the session
-            req.session.paymentDetails = {
-                transactionId,
-                buyerId: userId,
-                sellerId: item.seller_id,
-                itemId,
-                amount: totalPrice
-            };
-
-            // Step 4: Redirect to the payment form route
-            console.log("Redirecting to Payment Creation.");
-            res.redirect(`/assignment4/payment/create`);
+            console.log("Loading Payment Creation...");
+            // Step 4: Send POST request to /payment/create with transactionId
+            const paymentCreationResponse = await axios.post(
+                `https://gerardcosc631.com/assignment4/payment/create`,
+                {transactionId},
+                {headers: {'Content-Type': 'application/json'}}
+            );
         } catch (error) {
             console.error('Error during purchase:', error);
             next(error);

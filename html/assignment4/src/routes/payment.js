@@ -3,19 +3,6 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../config/db'); // Database connection
 const router = express.Router();
 
-//Route to render Payment Form
-router.get('/create', (req, res) => {
-    paymentDetails = req.session.paymentDetails;
-
-    if (!paymentDetails) {
-        return res.status(400).send('No payment details found');
-    }
-
-    console.log("Rendering paymentForm.ejs");
-    res.render('paymentForm', paymentDetails);
-});
-
-// Route to create a payment
 router.post('/create', async (req, res) => {
     const { transactionId } = req.body; // Get transactionId from the request body
 
@@ -31,7 +18,7 @@ router.post('/create', async (req, res) => {
         // Extract relevant fields from the transaction record
         const { amount, buyer_id: buyerId, seller_id: sellerId, item_id: itemId, commission } = transaction;
 
-        // Additional details for item
+        // Fetch item details
         const [itemRows] = await db.execute('SELECT title, description FROM items WHERE id = ?', [itemId]);
         const item = itemRows[0];
 
@@ -54,9 +41,14 @@ router.post('/create', async (req, res) => {
             automatic_payment_methods: { enabled: true }, // Enable Stripe's automatic payment method flow
         });
 
-        res.status(200).json({
-            message: 'Payment intent created successfully',
-            paymentIntent,
+        // Pass data to the view
+        res.render('paymentForm', {
+            buyerId,
+            sellerId,
+            itemId,
+            amount,
+            transactionId,
+            paymentIntentClientSecret: paymentIntent.client_secret, // Pass client_secret for front-end use
         });
     } catch (error) {
         console.error('Error during payment processing:', error);

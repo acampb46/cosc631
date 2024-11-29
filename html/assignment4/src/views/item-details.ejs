@@ -141,8 +141,10 @@
 
             if (response.ok) {
                 // After the purchase is successful, call createPayment function
+                console.log("Transaction successfully created.");
                 const data = await response.json();
                 if (data.transactionId) {
+                    console.log("Loading Payment Creation...");
                     await createPayment(data.transactionId); // Trigger payment creation
                 }
             } else {

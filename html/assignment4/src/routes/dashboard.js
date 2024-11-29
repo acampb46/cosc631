@@ -14,8 +14,8 @@ router.get('/load', async (req, res, next) => {
         res.render('dashboard', {
             pageTitle: 'Your Dashboard',
             headerText: 'Welcome to Your Dashboard',
-            userItems,  // Pass userItems data to the view
-            purchasedItems // Pass purchasedItems data to the view
+            userItems,
+            purchasedItems
         });
     } catch (error) {
         console.error(error);

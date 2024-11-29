@@ -3,6 +3,17 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../config/db'); // Database connection
 const router = express.Router();
 
+//Route to render Payment Form
+router.get('/create', (req, res) => {
+    paymentDetails = req.session.paymentDetails;
+
+    if (!paymentDetails) {
+        return res.status(400).send('No payment details found');
+    }
+
+    console.log("Rendering paymentForm.ejs");
+    res.render('paymentForm', paymentDetails);
+});
 
 // Route to create a payment
 router.post('/create', async (req, res) => {

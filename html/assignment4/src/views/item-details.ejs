@@ -153,7 +153,7 @@
                 const data = await response.json();
                 if (data.transactionId) {
                     console.log("Loading Payment Creation...");
-                    await checkout(data.amount, itemId, data.transactionId, quantity); // Trigger checkout session creation
+                    await initialize(); // Trigger checkout session creation
                 }
             } else {
                 const errorData = await response.json();
@@ -162,24 +162,29 @@
         });
     }
 
-    async function checkout(amount, itemId, transactionId, quantity) {
-        const response = await fetch('/create-checkout-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                amount: amount,
-                itemId: itemId,
-                transactionId: transactionId,
-                quantity: quantity,
-            }),
+    async function initialize() {
+        const fetchClientSecret = async () => {
+            const response = await fetch('/create-checkout-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: amount,
+                    itemId: itemId,
+                    transactionId: transactionId,
+                    quantity: quantity,
+                }),
+            });
+            const { clientSecret } = await response.json();
+            return clientSecret;
+        };
+
+        // Initialize Checkout
+        const checkout = await stripe.initEmbeddedCheckout({
+            fetchClientSecret,
         });
 
-        const { sessionId } = await response.json();
-
-        const { error } = await stripe.redirectToCheckout({ sessionId });
-        if (error) {
-            console.error('Error during checkout:', error);
-        }
+        // Mount Checkout
+        checkout.mount('#checkout');
     }
 
 

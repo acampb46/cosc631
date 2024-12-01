@@ -9,6 +9,7 @@ router.post('/create-checkout-session', async (req, res) => {
         const { amount, itemId, transactionId, quantity } = req.body;
         const userId = req.session.userId; // Assuming the user is authenticated
 
+        console.log('Creating Payment Intent...');
         // Step 1: Create a PaymentIntent
         const paymentIntent = await stripe.paymentIntents.create({
             amount: amount * 100, // Stripe expects amounts in cents
@@ -16,6 +17,7 @@ router.post('/create-checkout-session', async (req, res) => {
             metadata: { itemId, userId, transactionId }, // Pass metadata for later use
         });
 
+        console.log('Creating Checkout Session...');
         // Step 2: Create a Checkout Session linked to the PaymentIntent
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -36,14 +38,16 @@ router.post('/create-checkout-session', async (req, res) => {
                 setup_future_usage: 'on_session', // Optional: save card for reuse
             },
             success_url: `https://gerardcosc631.com/assignment4/success`,
+            return_url: `https://gerardcosc631.com/assignment4/dashboard/load`
         });
 
-        // Step 3: Store PaymentIntent details in your database (optional)
+        console.log('Inserting Payment Details in Database...');
+        // Step 3: Store PaymentIntent details
         await db.execute('INSERT INTO transactions (buyer_id, seller_id, item_id, amount, payment_intent_id) VALUES (?, ?, ?, ?, ?)',
             [userId, sellerId, itemId, amount, paymentIntent.id]);
 
         // Send the session ID to the frontend
-        res.json({ sessionId: session.id });
+        res.json({ clientSecret: paymentIntent.clientSecret});
     } catch (error) {
         console.error('Error creating checkout session:', error);
         res.status(500).json({ error: error.message });

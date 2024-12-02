@@ -50,7 +50,7 @@ router.post('/', async (req, res) => {
                         },
                         unit_amount: amount * 100, // Amount in cents
                     },
-                    quantity: quantity,
+                    quantity: 1,
                 },
             ],
             mode: 'payment',

@@ -70,7 +70,6 @@ app.get('/assignment4', (req, res) => {
 // Routes
 app.use('/assignment4/auth', require('./routes/auth'));
 app.use('/assignment4/items', require('./routes/items'));
-app.use('/assignment4/bids', require('./routes/bids'));
 app.use('/assignment4/dashboard', require('./routes/dashboard'));
 app.use('/assignment4/search', require('./routes/search'));
 app.use('/assignment4/payment', require('./routes/payment'));

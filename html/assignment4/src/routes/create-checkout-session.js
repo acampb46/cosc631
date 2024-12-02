@@ -4,7 +4,7 @@ const router = express.Router();
 const db = require('../config/db');
 
 // Route to create a PaymentIntent and Checkout Session
-router.post('/create-checkout-session', async (req, res) => {
+router.post('/', async (req, res) => {
     console.log('Reached Checkout Session Creation...');
     try {
         const { transactionId } = req.body; // Pass transactionId in the request

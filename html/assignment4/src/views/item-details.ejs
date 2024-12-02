@@ -163,7 +163,7 @@
     }
 
     async function initialize() {
-        let stripe = Stripe(process.env.STRIPE_PUBLIC_KEY);
+        let stripe = Stripe('pk_test_51QMs0TLXTO62KelJflr3xe3hL2QRzcY8uOdvNtVo3aL8P2cAxmuxywzEmyAWkrOdHDEC2kZDdzWsLkS5FElu358e0062ie62a3');
         const fetchClientSecret = async () => {
             const response = await fetch('/create-checkout-session', {
                 method: 'POST',

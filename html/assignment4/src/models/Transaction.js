@@ -19,8 +19,6 @@ module.exports = {
             // Get the transaction ID
             const transactionId = result.insertId;
 
-            console.log("TransactionId: " + transactionId);
-
             // Return transaction details
             return {
                 transactionId,

@@ -3,10 +3,10 @@ const {createTransaction} = require('../models/Transaction');
 
 const purchaseController = {
     async buyNow(req, res, next) {
-        console.log("Entering buyNow logic");
+        console.log("Entering Buy Now logic");
 
         const {quantity} = req.body;
-        const userId = req.session.userId; // Assuming the user is authenticated
+        const userId = req.session.userId;
         const itemId = parseInt(req.body.itemId, 10);
 
         try {
@@ -23,6 +23,8 @@ const purchaseController = {
             // Step 3: Create the transaction record
             const transactionResponse = await createTransaction(userId, item.seller_id, itemId, totalPrice);
             const {transactionId} = transactionResponse.transactionId;
+
+            console.log("TransactionId: " + transactionId);
 
             // Step 4: Return the transactionId in the response
             return res.status(200).json({ transactionId});

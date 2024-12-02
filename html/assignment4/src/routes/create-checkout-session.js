@@ -1,7 +1,7 @@
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const router = express.Router();
-const db = require('../config/db'); // Example DB connection
+const db = require('../config/db');
 
 // Route to create a PaymentIntent and Checkout Session
 router.post('/create-checkout-session', async (req, res) => {

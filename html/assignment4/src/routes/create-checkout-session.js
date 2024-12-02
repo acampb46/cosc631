@@ -5,6 +5,7 @@ const db = require('../config/db');
 
 // Route to create a PaymentIntent and Checkout Session
 router.post('/create-checkout-session', async (req, res) => {
+    console.log('Reached Checkout Session Creation...');
     try {
         const { transactionId } = req.body; // Pass transactionId in the request
         const userId = req.session.userId; // Assuming the user is authenticated
@@ -24,7 +25,7 @@ router.post('/create-checkout-session', async (req, res) => {
             return res.status(404).json({ error: 'Transaction not found.' });
         }
 
-        const { amount, commission, item_id: itemId, seller_id: sellerId, quantity } = transactionRows[0];
+        const { amount, item_id: itemId, quantity } = transactionRows[0];
 
         console.log('Creating Payment Intent...');
         // Step 1: Create a PaymentIntent
@@ -33,6 +34,8 @@ router.post('/create-checkout-session', async (req, res) => {
             currency: 'usd',
             metadata: { itemId, userId, transactionId }, // Pass metadata for later use
         });
+
+
 
         console.log('Creating Checkout Session...');
         // Step 2: Create a Checkout Session linked to the PaymentIntent

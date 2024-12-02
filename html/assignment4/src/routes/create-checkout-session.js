@@ -58,6 +58,7 @@ router.post('/', async (req, res) => {
                 setup_future_usage: 'on_session', // Optional: save card for reuse
             },
             //client_secret: paymentIntent.client_secret,
+            ui_mode: 'embedded',
             success_url: `https://gerardcosc631.com/assignment4/success`,
             return_url: `https://gerardcosc631.com/assignment4/dashboard/load`
         });

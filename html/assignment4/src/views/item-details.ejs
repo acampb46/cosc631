@@ -172,7 +172,7 @@
                     transactionId: transactionId,
                 }),
             });
-            const clientSecret  = await response.json();
+            const {clientSecret}  = await response.json();
             console.log('Client secret: ' + clientSecret);
             return clientSecret;
         };

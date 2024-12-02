@@ -162,51 +162,29 @@
         });
     }
 
-    const stripe = Stripe('pk_test_51QMs0TLXTO62KelJflr3xe3hL2QRzcY8uOdvNtVo3aL8P2cAxmuxywzEmyAWkrOdHDEC2kZDdzWsLkS5FElu358e0062ie62a3');
-
-    // Function to fetch the client secret from the server
-    async function fetchClientSecret(transactionId) {
-        try {
+    async function initialize(transactionId) {
+        let stripe = Stripe('pk_test_51QMs0TLXTO62KelJflr3xe3hL2QRzcY8uOdvNtVo3aL8P2cAxmuxywzEmyAWkrOdHDEC2kZDdzWsLkS5FElu358e0062ie62a3');
+        const fetchClientSecret = async () => {
             const response = await fetch('/assignment4/create-checkout-session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ transactionId }),
+                body: JSON.stringify({
+                    transactionId: transactionId,
+                }),
             });
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch client secret: ${response.statusText}`);
-            }
-
-            const { clientSecret } = await response.json();
-            console.log('Client secret:', clientSecret);
-
-            if (!clientSecret) {
-                throw new Error('Client secret is undefined.');
-            }
-
+            const {clientSecret}  = await response.json();
+            console.log('Client secret: ' + clientSecret);
             return clientSecret;
-        } catch (error) {
-            console.error('Error fetching client secret:', error);
-            throw error; // Rethrow error to handle it at a higher level if needed
-        }
+        };
+
+        // Initialize Checkout
+        const checkout = await stripe.initEmbeddedCheckout({
+            fetchClientSecret,
+        });
+
+        // Mount Checkout
+        checkout.mount('#checkout');
     }
-
-    // Function to initialize and mount Stripe Checkout
-    async function initialize(transactionId) {
-        try {
-            const clientSecret = await fetchClientSecret(transactionId);
-
-            const checkout = await stripe.initEmbeddedCheckout({
-                fetchClientSecret: async () => clientSecret,
-            });
-
-            checkout.mount('#checkout');
-        } catch (error) {
-            console.error('Error initializing checkout:', error);
-            alert('An error occurred while initializing the checkout. Please try again.');
-        }
-    }
-
 
 
 

@@ -59,7 +59,7 @@ router.post('/', async (req, res) => {
             },
             //client_secret: paymentIntent.client_secret,
             ui_mode: 'embedded',
-            success_url: `https://gerardcosc631.com/assignment4/success`
+            return_url: `https://gerardcosc631.com/assignment4/dashboard/load`
         });
 
         console.log('Updating Payment Details in Database...');
@@ -70,7 +70,7 @@ router.post('/', async (req, res) => {
         );
 
         // Send the session ID to the frontend
-        res.status(201).json({ clientSecret: paymentIntent.client_secret });
+        res.status(201).json({clientSecret: session.client_secret});
     } catch (error) {
         console.error('Error creating checkout session:', error);
         res.status(500).json({ error: error.message });

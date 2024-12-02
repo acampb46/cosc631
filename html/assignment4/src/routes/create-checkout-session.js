@@ -17,7 +17,7 @@ router.post('/', async (req, res) => {
         console.log('Fetching transaction details...');
         // Fetch transaction details from the database
         const [transactionRows] = await db.execute(
-            'SELECT amount, commission, item_id, seller_id, quantity FROM transactions WHERE id = ? AND buyer_id = ?',
+            'SELECT amount, commission, item_id, seller_id FROM transactions WHERE id = ? AND buyer_id = ?',
             [transactionId, userId]
         );
 

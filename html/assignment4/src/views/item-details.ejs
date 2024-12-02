@@ -163,6 +163,7 @@
     }
 
     async function initialize() {
+        let stripe = Stripe(process.env.STRIPE_PUBLIC_KEY);
         const fetchClientSecret = async () => {
             const response = await fetch('/create-checkout-session', {
                 method: 'POST',

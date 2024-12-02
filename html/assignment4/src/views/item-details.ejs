@@ -147,9 +147,9 @@
                 body: JSON.stringify({itemId, quantity}),
             });
 
-            if (response.ok) {
+            if (response.status === 201) {
                 // After the transaction is created, call createPayment function
-                console.log("Transaction successfully created.");
+                console.log("Transaction Creation Successful...");
                 const data = await response.json();
                 if (data.transactionId) {
                     console.log("Loading Payment Creation...");

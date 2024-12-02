@@ -6,28 +6,16 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 // Create a transaction (initiate payment)
 router.post('/create', async (req, res) => {
-    const { token, buyerId, sellerId, itemId, amount } = req.body;
+    const { buyerId, sellerId, itemId, amount } = req.body;
 
     console.log(`Transaction Request: buyerId: ${buyerId}, sellerId: ${sellerId}, itemId: ${itemId}, amount: ${amount}.`);
 
     try {
-        // Step 1: Charge the card using Stripe
-        const charge = await stripe.charges.create({
-            amount: Math.round(amount * 100), // Convert to cents
-            currency: 'usd',
-            source: token,
-            description: `Purchase of item ${itemId} by buyer ${buyerId}`,
-        });
-
-        if (charge.status !== 'succeeded') {
-            return res.status(400).json({ message: 'Payment failed' });
-        }
-
-        // Step 2: Create a transaction record in the database
+        // Create a transaction record in the database
         const transaction = await createTransaction(buyerId, sellerId, itemId, amount);
 
         // Return success response (do not update quantity here)
-        res.status(201).json({ message: 'Payment successful', transactionId: transaction.transactionId });
+        res.status(201).json({ message: 'Transaction Successfully Created.', transactionId: transaction.transactionId });
     } catch (error) {
         console.error('Error during transaction creation:', error);
         res.status(500).json({ message: error.message });

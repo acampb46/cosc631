@@ -1,5 +1,5 @@
 const db = require('../config/db'); // Your database connection
-const { sendEmail } = require('../utils/notificationUtils'); // Optional notification utility
+const {sendEmail} = require('../utils/notificationUtils'); // Optional notification utility
 
 module.exports = {
     // Create a transaction
@@ -11,24 +11,14 @@ module.exports = {
 
         try {
             // Start a database transaction
-            const [result] = await db.execute(
-                'INSERT INTO transactions (buyer_id, seller_id, item_id, amount, status, transaction_date) VALUES (?, ?, ?, ?, ?, NOW())',
-                [buyerId, sellerId, itemId, amount, 'pending']
-            );
+            const [result] = await db.execute('INSERT INTO transactions (buyer_id, seller_id, item_id, amount, status, transaction_date) VALUES (?, ?, ?, ?, ?, NOW())', [buyerId, sellerId, itemId, amount, 'pending']);
 
             // Get the transaction ID
             const transactionId = result.insertId;
 
             // Return transaction details
             return {
-                transactionId,
-                buyerId,
-                sellerId,
-                itemId,
-                amount,
-                commission,
-                totalAmount,
-                status: 'pending', // Initially pending until payment is processed
+                transactionId, buyerId, sellerId, itemId, amount, commission, totalAmount, status: 'pending', // Initially pending until payment is processed
             };
         } catch (error) {
             console.error('Error creating transaction:', error);
@@ -40,20 +30,14 @@ module.exports = {
     completeTransaction: async (transactionId) => {
         try {
             // Update the status of the transaction to 'completed'
-            const [updateResult] = await db.execute(
-                'UPDATE transactions SET status = ? WHERE id = ?',
-                ['completed', transactionId]
-            );
+            const [updateResult] = await db.execute('UPDATE transactions SET status = ? WHERE id = ?', ['completed', transactionId]);
 
             if (updateResult.affectedRows === 0) {
                 throw new Error('Transaction not found');
             }
 
             // Fetch transaction details
-            const [transactionRows] = await db.execute(
-                'SELECT * FROM transactions WHERE id = ?',
-                [transactionId]
-            );
+            const [transactionRows] = await db.execute('SELECT * FROM transactions WHERE id = ?', [transactionId]);
             const transaction = transactionRows[0];
 
             // Fetch additional details
@@ -67,18 +51,7 @@ module.exports = {
             const sellerEmail = sellerRows[0].email;
 
             // Send email notifications to both buyer and seller
-            await Promise.all([
-                sendEmail(
-                    buyerEmail,
-                    'Purchase Confirmation',
-                    `You have successfully purchased "${itemTitle}" for $${transaction.amount}.`
-                ),
-                sendEmail(
-                    sellerEmail,
-                    'Sale Notification',
-                    `Your item "${itemTitle}" has been sold for $${transaction.amount}.`
-                ),
-            ]);
+            await Promise.all([sendEmail(buyerEmail, 'Purchase Confirmation', `You have successfully purchased "${itemTitle}" for $${transaction.amount}.`), sendEmail(sellerEmail, 'Sale Notification', `Your item "${itemTitle}" has been sold for $${transaction.amount}.`),]);
 
             // Return the completed transaction details
             return {
@@ -98,10 +71,7 @@ module.exports = {
     // Get transaction details by transactionId
     getTransactionDetails: async (transactionId) => {
         try {
-            const [result] = await db.execute(
-                'SELECT * FROM transactions WHERE id = ?',
-                [transactionId]
-            );
+            const [result] = await db.execute('SELECT * FROM transactions WHERE id = ?', [transactionId]);
 
             if (result.length === 0) {
                 throw new Error('Transaction not found');

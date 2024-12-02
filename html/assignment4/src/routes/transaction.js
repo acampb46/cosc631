@@ -1,12 +1,11 @@
 const express = require('express');
-const { createTransaction, completeTransaction, getTransactionDetails } = require('../models/Transaction');
+const {createTransaction, completeTransaction, getTransactionDetails} = require('../models/Transaction');
 const db = require('../config/db');
 const router = express.Router();
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 // Create a transaction (initiate payment)
 router.post('/create', async (req, res) => {
-    const { buyerId, sellerId, itemId, amount } = req.body;
+    const {buyerId, sellerId, itemId, amount} = req.body;
 
     console.log(`Transaction Request: buyerId: ${buyerId}, sellerId: ${sellerId}, itemId: ${itemId}, amount: ${amount}.`);
 
@@ -15,16 +14,16 @@ router.post('/create', async (req, res) => {
         const transaction = await createTransaction(buyerId, sellerId, itemId, amount);
 
         // Return success response (do not update quantity here)
-        res.status(201).json({ message: 'Transaction Successfully Created.', transactionId: transaction.transactionId });
+        res.status(201).json({message: 'Transaction Successfully Created.', transactionId: transaction.transactionId});
     } catch (error) {
         console.error('Error during transaction creation:', error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({message: error.message});
     }
 });
 
 // Complete a transaction (finalize transaction)
 router.post('/complete', async (req, res) => {
-    const { transactionId } = req.body;
+    const {transactionId} = req.body;
 
     try {
         // Complete the transaction and update item quantity
@@ -39,19 +38,19 @@ router.post('/complete', async (req, res) => {
         res.status(200).json(transaction);
     } catch (error) {
         console.error('Error during transaction completion:', error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({message: error.message});
     }
 });
 
 // Get transaction details by ID
 router.get('/:id', async (req, res) => {
-    const { id } = req.params;
+    const {id} = req.params;
 
     try {
         const transaction = await getTransactionDetails(id);
         res.status(200).json(transaction);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({message: error.message});
     }
 });
 

@@ -57,7 +57,7 @@ router.post('/', async (req, res) => {
             payment_intent_data: {
                 setup_future_usage: 'on_session', // Optional: save card for reuse
             },
-            client_secret: paymentIntent.client_secret,
+            //client_secret: paymentIntent.client_secret,
             success_url: `https://gerardcosc631.com/assignment4/success`,
             return_url: `https://gerardcosc631.com/assignment4/dashboard/load`
         });

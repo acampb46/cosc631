@@ -46,24 +46,6 @@
         </div>
     </section>
 
-    <!-- Bidding Section -->
-    <% if (item.category === 'auction') { %>
-        <section class="mb-4">
-            <h2>Place a Bid</h2>
-            <form id="bid-form" class="row g-3">
-                <div class="col-md-6">
-                    <label for="bidAmount"></label>
-                    <input type="number" id="bidAmount" name="bidAmount" class="form-control"
-                           placeholder="Enter your bid" required>
-                </div>
-                <div class="col-md-6">
-                    <button type="submit" class="btn btn-primary">Place Bid</button>
-                </div>
-            </form>
-            <p class="mt-2"><strong>Current Highest Bid:</strong> $<span id="highest-bid">Loading...</span></p>
-        </section>
-    <% } %>
-
     <!-- Purchase Section -->
     <% if (item.category === 'for sale') { %>
         <section class="mb-4">
@@ -104,35 +86,6 @@
     socket.on('connect', () => {
         console.log('Connected to the server via Socket.IO');
     });
-
-
-    const bidForm = document.getElementById('bid-form');
-    if (bidForm) {
-        fetchHighestBid();
-        console.log("Processing bid form.");
-        bidForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const bidAmount = document.getElementById('bidAmount').value;
-
-            try {
-                const response = await fetch('/assignment4/bids/place', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({itemId, bidAmount}),
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    alert(`Failed to place bid: ${errorData.message}`);
-                } else {
-                    alert('Bid placed successfully!');
-                }
-            } catch (error) {
-                console.error('Network or server error:', error);
-                alert('There was an error processing your bid. Please try again.');
-            }
-        });
-    }
 
     const buyForm = document.getElementById('buy-form');
     if (buyForm) {
@@ -187,35 +140,14 @@
     }
 
 
-
-    async function fetchHighestBid() {
-        try {
-            const response = await fetch(`/assignment4/bids/highest/${itemId}`);
-            const data = await response.json();
-            document.getElementById('highest-bid').textContent = data.bid_amount ? data.bid_amount : 'No bids yet';
-        } catch (error) {
-            console.error('Failed to fetch highest bid:', error);
-        }
-    }
-
     socket.emit('joinItemRoom', itemId, () => {
         socket.join(`item-${itemId}`);
-        console.log(`Joined room for item ${itemId}`);
-        if (bidForm) {
-            fetchHighestBid();
-        }
-
+        console.log(`Joined room for item ${itemId}`);s
     });
 
     socket.on('quantityUpdated', (data) => {
         if (data.itemId === itemId) {
             document.getElementById('item-quantity').textContent = data.newQuantity;
-        }
-    });
-
-    socket.on('newBid', (data) => {
-        if (data.itemId === itemId) {
-            document.getElementById('highest-bid').textContent = data.bidAmount;
         }
     });
 

@@ -6,13 +6,31 @@ const db = require('../config/db');
 // Route to create a PaymentIntent and Checkout Session
 router.post('/create-checkout-session', async (req, res) => {
     try {
-        const { amount, itemId, transactionId, quantity } = req.body;
+        const { transactionId } = req.body; // Pass transactionId in the request
         const userId = req.session.userId; // Assuming the user is authenticated
+
+        if (!transactionId) {
+            return res.status(400).json({ error: 'Transaction ID is required.' });
+        }
+
+        console.log('Fetching transaction details...');
+        // Fetch transaction details from the database
+        const [transactionRows] = await db.execute(
+            'SELECT amount, commission, item_id, seller_id, quantity FROM transactions WHERE id = ? AND buyer_id = ?',
+            [transactionId, userId]
+        );
+
+        if (transactionRows.length === 0) {
+            return res.status(404).json({ error: 'Transaction not found.' });
+        }
+
+        const { amount, commission, item_id: itemId, seller_id: sellerId, quantity } = transactionRows[0];
+        const totalPrice = amount + commission;
 
         console.log('Creating Payment Intent...');
         // Step 1: Create a PaymentIntent
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount * 100, // Stripe expects amounts in cents
+            amount: totalPrice * 100, // Stripe expects amounts in cents
             currency: 'usd',
             metadata: { itemId, userId, transactionId }, // Pass metadata for later use
         });
@@ -28,7 +46,7 @@ router.post('/create-checkout-session', async (req, res) => {
                         product_data: {
                             name: `Purchase Item ${itemId}`,
                         },
-                        unit_amount: amount * 100, // Amount in cents
+                        unit_amount: totalPrice * 100, // Amount in cents
                     },
                     quantity: quantity,
                 },
@@ -42,13 +60,15 @@ router.post('/create-checkout-session', async (req, res) => {
             return_url: `https://gerardcosc631.com/assignment4/dashboard/load`
         });
 
-        console.log('Inserting Payment Details in Database...');
-        // Step 3: Store PaymentIntent details
-        await db.execute('INSERT INTO transactions (buyer_id, seller_id, item_id, amount, payment_intent_id) VALUES (?, ?, ?, ?, ?)',
-            [userId, sellerId, itemId, amount, paymentIntent.id]);
+        console.log('Updating Payment Details in Database...');
+        // Step 3: Update the PaymentIntent details in the database
+        await db.execute(
+            'UPDATE transactions SET payment_intent_id = ? WHERE id = ?',
+            [paymentIntent.id, transactionId]
+        );
 
         // Send the session ID to the frontend
-        res.json({ clientSecret: paymentIntent.clientSecret});
+        res.json({ sessionId: session.id });
     } catch (error) {
         console.error('Error creating checkout session:', error);
         res.status(500).json({ error: error.message });

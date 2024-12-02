@@ -25,12 +25,11 @@ router.post('/create-checkout-session', async (req, res) => {
         }
 
         const { amount, commission, item_id: itemId, seller_id: sellerId, quantity } = transactionRows[0];
-        const totalPrice = amount + commission;
 
         console.log('Creating Payment Intent...');
         // Step 1: Create a PaymentIntent
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: totalPrice * 100, // Stripe expects amounts in cents
+            amount: amount * 100, // Stripe expects amounts in cents
             currency: 'usd',
             metadata: { itemId, userId, transactionId }, // Pass metadata for later use
         });
@@ -46,7 +45,7 @@ router.post('/create-checkout-session', async (req, res) => {
                         product_data: {
                             name: `Purchase Item ${itemId}`,
                         },
-                        unit_amount: totalPrice * 100, // Amount in cents
+                        unit_amount: amount * 100, // Amount in cents
                     },
                     quantity: quantity,
                 },

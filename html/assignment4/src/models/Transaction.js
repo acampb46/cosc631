@@ -13,7 +13,7 @@ module.exports = {
             // Start a database transaction
             const [result] = await db.execute(
                 'INSERT INTO transactions (buyer_id, seller_id, item_id, amount, status, transaction_date) VALUES (?, ?, ?, ?, ?, NOW())',
-                [buyerId, sellerId, itemId, totalAmount, 'pending']
+                [buyerId, sellerId, itemId, amount, 'pending']
             );
 
             // Get the transaction ID

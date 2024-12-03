@@ -25,6 +25,7 @@ router.post('/create', async (req, res) => {
 // Complete a transaction (finalize transaction)
 router.post('/complete', async (req, res) => {
     const { transactionId, quantity } = req.body;
+    console.log('Received quantity: ' + quantity);
 
     try {
         // Step 1: Complete the transaction and get transaction details

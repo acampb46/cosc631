@@ -25,7 +25,7 @@ router.get('/:session_id', async (req, res) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ itemId, quantity }),
+                body: JSON.stringify({ transactionId, itemId, quantity }),
             });
 
             if (!response.ok) {

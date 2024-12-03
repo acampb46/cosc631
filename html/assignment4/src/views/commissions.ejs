@@ -52,36 +52,40 @@
 
 <!-- Chart.js Script -->
 <script>
-    // Populate graph with data passed from server
-    const graphData = <%= JSON.stringify(graphData) %>;
+    // Safely populate graph with data passed from the server
+    const graphData = <%=JSON.stringify(graphData || []) %>;
 
-    const labels = graphData.map(data => data.date);
-    const dataPoints = graphData.map(data => data.total_commission);
+    if (graphData.length > 0) {
+        const labels = graphData.map(data => data.date);
+        const dataPoints = graphData.map(data => data.total_commission);
 
-    const ctx = document.getElementById('commissionGraph').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Total Commission',
-                data: dataPoints,
-                borderColor: 'rgba(75, 192, 192, 1)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderWidth: 2,
-            }],
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: true, position: 'top' },
+        const ctx = document.getElementById('commissionGraph').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Commission',
+                    data: dataPoints,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 2,
+                }],
             },
-            scales: {
-                x: { title: { display: true, text: 'Date' } },
-                y: { title: { display: true, text: 'Commission ($)' } },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true, position: 'top' },
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Date' } },
+                    y: { title: { display: true, text: 'Commission ($)' } },
+                },
             },
-        },
-    });
+        });
+    } else {
+        console.error('No data available for the graph');
+    }
 </script>
 
 <!-- Bootstrap JS (Optional for interactivity) -->

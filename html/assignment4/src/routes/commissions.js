@@ -26,6 +26,8 @@ router.get('/', async (req, res) => {
             ORDER BY DATE(created_at)
         `);
 
+        console.log('Graph Data: ' + graphData);
+
         res.render('commissions', { commissions: rows, graphData });
     } catch (error) {
         console.error('Error fetching commissions:', error);

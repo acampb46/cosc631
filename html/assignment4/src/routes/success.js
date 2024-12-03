@@ -16,8 +16,8 @@ router.get('/:session_id', async (req, res) => {
 
             // Extract transaction ID from session metadata
             const transactionId = session.metadata.transactionId;
-            const quantity = sesssion.metadata.quantity;
-            const itemId = session.metadata.item_id;
+            const quantity = session.metadata.quantity;
+            const itemId = session.metadata.itemId;
 
             // Fetch the transaction completion endpoint
             const response = await fetch('https://gerardcosc631.com/assignment4/transaction/complete', {

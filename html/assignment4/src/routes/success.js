@@ -18,7 +18,7 @@ router.get('/:session_id', async (req, res) => {
             const transactionId = session.metadata.transactionId;
 
             // Fetch the transaction completion endpoint
-            const response = await fetch('/assignment4/transaction/complete', {
+            const response = await fetch('https://gerardcosc631.com/assignment4/transaction/complete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

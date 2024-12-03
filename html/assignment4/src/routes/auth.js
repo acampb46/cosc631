@@ -30,6 +30,21 @@ router.get('/login', (req, res) => {
 // User logout
 router.post('/logout', authController.logout);
 
+router.get('/logout', (req, res) => {
+    console.log('Routing to index.js');
+    const items = [{name: 'Antique Vase', price: '100'}, {
+        name: 'Vintage Watch',
+        price: '250'
+    }, {name: 'Signed Football', price: '75'},];
+
+    res.render('index', {
+        pageTitle: 'Auction Site Home',
+        headerText: 'Welcome to the Auction Site',
+        featuredHeading: 'Featured Items',
+        items,
+    });
+});
+
 // Token generation route
 router.post('/auth/generate-token', generateToken); // To generate a token
 

@@ -147,6 +147,7 @@
     });
 
     socket.on('quantityUpdated', (data) => {
+        console.log('Received quantityUpdated:', data);
         if (data.itemId === itemId) {
             document.getElementById('item-quantity').textContent = data.newQuantity;
         }

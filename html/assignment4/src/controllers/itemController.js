@@ -46,7 +46,6 @@ const itemController = {
     }, async updateQuantity(req, res, next) {
         try {
             const {id, quantity} = req.body;
-            console.log('id: ' + id + ' quantity: ' + quantity);
             await Item.updateQuantity(id, quantity);
 
             // Get io from the app object
@@ -54,6 +53,7 @@ const itemController = {
 
             // Notify clients in the item's room
             io.to(`item-${id}`).emit('quantityUpdated', {itemId: id, newQuantity: quantity});
+            console.log(`Emitted 'quantityUpdated' to room: item-${id}`);
 
             res.status(200).send({message: 'Quantity updated'});
         } catch (error) {

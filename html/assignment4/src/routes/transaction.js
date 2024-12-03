@@ -24,8 +24,7 @@ router.post('/create', async (req, res) => {
 
 // Complete a transaction (finalize transaction)
 router.post('/complete', async (req, res) => {
-    const { transactionId, quantity } = req.body;
-    console.log('Received quantity: ' + quantity);
+    const {transactionId, quantity} = req.body;
 
     try {
         // Step 1: Complete the transaction and get transaction details
@@ -33,31 +32,31 @@ router.post('/complete', async (req, res) => {
 
         // Step 2: Update item quantity using the updateQuantity logic
         const itemId = transaction.itemId;
-        const newQuantity = transaction.quantity - quantity; // Assuming quantity is decremented by 1
+        const newQuantity = transaction.quantity - quantity;
 
         if (newQuantity < 0) {
-            return res.status(400).json({ message: 'Insufficient quantity for item.' });
+            return res.status(400).json({message: 'Insufficient quantity for item.'});
         }
 
 
         // Update Quantity
         const updateResponse = await fetch('https://gerardcosc631.com/assignment4/items/updateQuantity', {
-            method: 'POST',
-            headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ transactionId, quantity }),
-    });
+            method: 'POST', headers: {
+                'Content-Type': 'application/json',
+            }, body: JSON.stringify({itemId, quantity}),
+        });
 
-        // Step 3: Mark item as sold if quantity is 0
-        if (newQuantity === 0) {
-            await db.execute('UPDATE items SET status = ? WHERE id = ?', ['sold', itemId]);
+        if(updateResponse.ok) {
+            // Step 3: Mark item as sold if quantity is 0
+            if (newQuantity === 0) {
+                await db.execute('UPDATE items SET status = ? WHERE id = ?', ['sold', itemId]);
+            }
         }
 
         res.status(200).json(transaction);
     } catch (error) {
         console.error('Error during transaction completion:', error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({message: error.message});
     }
 });
 

@@ -53,7 +53,7 @@
 <!-- Chart.js Script -->
 <script>
     // Safely populate graph with data passed from the server
-    const graphData = <%=JSON.stringify(graphData || []) %>;
+    const graphData = <%- JSON.stringify(graphData || []) %>;
 
     if (graphData.length > 0) {
         const labels = graphData.map(data => data.date);

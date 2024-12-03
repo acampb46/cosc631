@@ -152,9 +152,12 @@
             const quantityElement = document.getElementById('item-quantity');
             if (quantityElement) {
                 quantityElement.textContent = data.newQuantity;
+                console.log("Quantity element found... Updating.");
             } else {
                 console.error('Quantity element not found!');
             }
+        } else {
+            console.log('Data.itemId does not match itemId on webpage');
         }
     });
 

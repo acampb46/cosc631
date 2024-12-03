@@ -84,7 +84,7 @@
     <% commissions.forEach(commission => { %>
         <tr>
             <td><%= commission.commission_id %></td>
-            <td>$<%= commission.commission_amount.toFixed(2) %></td>
+            <td>$<%= commission.commission_amount %></td>
             <td><%= commission.created_at %></td>
             <td>
                 <a href="assignment4/item/<%= item_id %>">View Item</a>

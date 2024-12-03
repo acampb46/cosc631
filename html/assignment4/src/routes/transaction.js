@@ -32,6 +32,7 @@ router.post('/complete', async (req, res) => {
 
         // Step 2: Update item quantity using the updateQuantity logic
         const itemId = transaction.itemId;
+        console.log('itemId: ' + itemId);
         const newQuantity = transaction.quantity - quantity;
 
         if (newQuantity < 0) {

@@ -7,7 +7,7 @@ const db = require('../config/db');
 router.post('/', async (req, res) => {
     console.log('Reached Checkout Session Creation...');
     try {
-        const { transactionId } = req.body; // Pass transactionId in the request
+        const { transactionId, quantity } = req.body; // Pass transactionId in the request
         const userId = req.session.userId; // Assuming the user is authenticated
 
         if (!transactionId) {
@@ -25,14 +25,14 @@ router.post('/', async (req, res) => {
             return res.status(404).json({ error: 'Transaction not found.' });
         }
 
-        const { amount, item_id: itemId, quantity } = transactionRows[0];
+        const { amount, item_id: itemId } = transactionRows[0];
 
         console.log('Creating Payment Intent...');
         // Step 1: Create a PaymentIntent
         const paymentIntent = await stripe.paymentIntents.create({
             amount: amount * 100, // Stripe expects amounts in cents
             currency: 'usd',
-            metadata: { itemId, userId, transactionId }, // Pass metadata for later use
+            metadata: { itemId, userId, transactionId, quantity }, // Pass metadata for later use
         });
 
 
@@ -56,6 +56,8 @@ router.post('/', async (req, res) => {
             mode: 'payment',
             metadata: {
                 transactionId: transactionId,
+                quantity: quantity,
+                itemId: itemId
             },
             payment_intent_data: {
                 setup_future_usage: 'on_session',

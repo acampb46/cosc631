@@ -24,7 +24,7 @@ router.post('/create', async (req, res) => {
 
 // Complete a transaction (finalize transaction)
 router.post('/complete', async (req, res) => {
-    const { transactionId } = req.body;
+    const { transactionId, quantity } = req.body;
 
     try {
         // Step 1: Complete the transaction and get transaction details
@@ -32,25 +32,21 @@ router.post('/complete', async (req, res) => {
 
         // Step 2: Update item quantity using the updateQuantity logic
         const itemId = transaction.itemId;
-        const newQuantity = transaction.quantity - 1; // Assuming quantity is decremented by 1
+        const newQuantity = transaction.quantity - quantity; // Assuming quantity is decremented by 1
 
         if (newQuantity < 0) {
             return res.status(400).json({ message: 'Insufficient quantity for item.' });
         }
 
-        // Step 3: Simulate req, res, and next for `updateQuantity`
-        const simulatedReq = {
-            body: { id: itemId, quantity: newQuantity },
-        };
-        const simulatedRes = {
-            send: (data) => console.log('Quantity Updated:', data),
-        };
-        const simulatedNext = (error) => {
-            if (error) throw error;
-        };
 
-        // Call `updateQuantity`
-        await itemController.updateQuantity(simulatedReq, simulatedRes, simulatedNext);
+        // Update Quantity
+        const updateResponse = await fetch('https://gerardcosc631.com/assignment4/items/updateQuantity', {
+            method: 'POST',
+            headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transactionId, quantity }),
+    });
 
         // Step 3: Mark item as sold if quantity is 0
         if (newQuantity === 0) {

@@ -106,7 +106,7 @@
                 const data = await response.json();
                 if (data.transactionId) {
                     console.log("Loading Payment Creation...");
-                    await initialize(data.transactionId); // Trigger checkout session creation
+                    await initialize(data.transactionId, quantity); // Trigger checkout session creation
                 }
             } else {
                 const errorData = await response.json();
@@ -115,7 +115,7 @@
         });
     }
 
-    async function initialize(transactionId) {
+    async function initialize(transactionId, quantity) {
         let stripe = Stripe('pk_test_51QMs0TLXTO62KelJflr3xe3hL2QRzcY8uOdvNtVo3aL8P2cAxmuxywzEmyAWkrOdHDEC2kZDdzWsLkS5FElu358e0062ie62a3');
         const fetchClientSecret = async () => {
             const response = await fetch('/assignment4/create-checkout-session', {
@@ -123,6 +123,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     transactionId: transactionId,
+                    quantity: quantity,
                 }),
             });
             const {clientSecret}  = await response.json();

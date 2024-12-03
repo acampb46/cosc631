@@ -11,6 +11,7 @@ router.get('/submit', (req, res) => {
 
 router.post('/create', itemController.create);
 router.get('/', itemController.list);
+router.post('/updateQuantity', itemController.updateQuantity);
 router.get('/:id', itemController.getById);
 
 module.exports = router;

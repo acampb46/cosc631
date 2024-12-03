@@ -16,6 +16,8 @@ router.get('/:session_id', async (req, res) => {
 
             // Extract transaction ID from session metadata
             const transactionId = session.metadata.transactionId;
+            const quantity = sesssion.metadata.quantity;
+            const itemId = session.metadata.item_id;
 
             // Fetch the transaction completion endpoint
             const response = await fetch('https://gerardcosc631.com/assignment4/transaction/complete', {
@@ -23,7 +25,7 @@ router.get('/:session_id', async (req, res) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ transactionId }),
+                body: JSON.stringify({ itemId, quantity }),
             });
 
             if (!response.ok) {

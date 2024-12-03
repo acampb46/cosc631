@@ -27,7 +27,7 @@ const purchaseController = {
             console.log("TransactionId: " + transactionId);
 
             // Step 4: Return the transactionId in the response
-            return res.status(200).json({ transactionId});
+            return res.status(200).json({ transactionId, quantity});
 
         } catch (error) {
             console.error('Error during purchase:', error);

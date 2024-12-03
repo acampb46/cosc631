@@ -54,7 +54,7 @@ const itemController = {
             // Notify clients in the item's room
             io.to(`item-${id}`).emit('quantityUpdated', {itemId: id, newQuantity: quantity});
 
-            res.send({message: 'Quantity updated'});
+            res.status(200).send({message: 'Quantity updated'});
         } catch (error) {
             next(error);
         }

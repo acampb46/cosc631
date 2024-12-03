@@ -44,7 +44,7 @@ router.post('/complete', async (req, res) => {
         const updateResponse = await fetch('https://gerardcosc631.com/assignment4/items/updateQuantity', {
             method: 'POST', headers: {
                 'Content-Type': 'application/json',
-            }, body: JSON.stringify({itemId, quantity: newQuantity}),
+            }, body: JSON.stringify({id: itemId, quantity: newQuantity}),
         });
 
         if(updateResponse.ok) {

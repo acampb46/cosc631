@@ -48,8 +48,8 @@
     </section>
 
     <!-- Purchase Section -->
-    <% if (item.category === 'for sale') { %>
-        <section class="mb-4">
+    <% if (item.category === 'for sale' && item.quantity > 0) { %>
+        <section class="mb-4" id="purchase-section">
             <h2>Buy Now</h2>
             <form id="buy-form" class="row g-3">
                 <div class="col-md-6">
@@ -150,16 +150,25 @@
         console.log('Received quantityUpdated:', data);
         if (parseInt(data.itemId) === parseInt(itemId)) {
             const quantityElement = document.getElementById('item-quantity');
+            const purchaseSection = document.getElementById('purchase-section');
+
             if (quantityElement) {
                 quantityElement.textContent = data.newQuantity;
-                console.log("Quantity element found... Updating.");
+                console.log("Quantity updated to:", data.newQuantity);
+
+                // Remove the purchase section if quantity is 0
+                if (data.newQuantity === 0 && purchaseSection) {
+                    purchaseSection.remove();
+                    console.log("Purchase section removed as quantity is 0");
+                }
             } else {
                 console.error('Quantity element not found!');
             }
         } else {
-            console.log('Data.itemId does not match itemId on webpage');
+            console.log('Item ID mismatch.');
         }
     });
+
 
     window.addEventListener('beforeunload', () => {
         socket.emit('leaveItemRoom', itemId);

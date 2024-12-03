@@ -11,6 +11,14 @@ router.get('/:session_id', async (req, res) => {
 
         let transactionDetails = null;
 
+        if (session.status === 'open') {
+            console.log(`Session ${session_id} is still open. Rendering payment failed page.`);
+            return res.render('error', {
+                message: 'Payment failed, please try again.',
+                redirectUrl: '/assignment4/dashboard/load',
+            });
+        }
+
         if (session.status === 'complete') {
             console.log(`Session ${session_id} is complete. Completing the transaction...`);
 

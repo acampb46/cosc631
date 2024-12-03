@@ -63,7 +63,7 @@ router.post('/', async (req, res) => {
                 setup_future_usage: 'on_session',
             },
             ui_mode: 'embedded',
-            return_url: `https://gerardcosc631.com/assignment4/success/{CHECKOUT_SESSION_ID}`
+            return_url: `https://gerardcosc631.com/assignment4/return/{CHECKOUT_SESSION_ID}`
         });
 
         console.log('Updating Payment Details in Database...');

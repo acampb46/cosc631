@@ -40,7 +40,7 @@ module.exports = {
             const [transactionRows] = await db.execute('SELECT * FROM transactions WHERE id = ?', [transactionId]);
             const transaction = transactionRows[0];
 
-            const [commissionResult] = await db.execute('INSERT INTO commissions (purchase_id, commission_amount) VALUES (?,?)', [transaction.payment_intent_id, transaction.commission]);
+            const [commissionResult] = await db.execute('INSERT INTO commissions (purchase_id, commission_amount) VALUES (?,?)', [transactionId, transaction.commission]);
             const commissionId = commissionResult[0];
 
             // Fetch additional details

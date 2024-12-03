@@ -137,7 +137,7 @@
 
         // Check if .jpg or .png appears more than once in the form
         const imageUrl = formData.imageUrl.toLowerCase();
-        const imageCount = (imageUrl.match(/\.jpg|\.png/g) || []).length;
+        const imageCount = (imageUrl.match(/\.jpg|\.png|\.jpeg/g) || []).length;
 
         if (imageCount > 1) {
             alert('Invalid form: .jpg or .png images can only appear once.');

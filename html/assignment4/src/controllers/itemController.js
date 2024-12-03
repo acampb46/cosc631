@@ -48,6 +48,9 @@ const itemController = {
             const {id, quantity} = req.body;
             await Item.updateQuantity(id, quantity);
 
+            // Get io from the app object
+            const io = req.app.get('io');
+
             // Notify clients in the item's room
             io.to(`item-${id}`).emit('quantityUpdated', {itemId: id, newQuantity: quantity});
 

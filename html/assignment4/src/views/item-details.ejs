@@ -39,7 +39,8 @@
                         <h5 class="card-title"><%= item.title %></h5>
                         <p class="card-text"><%= item.description %></p>
                         <p class="card-text"><strong>Price:</strong> $<%= item.price %></p>
-                        <p class="card-text"><strong>Quantity:</strong> <%= item.quantity %></p>
+                        <p class="card-text"><strong>Quantity:</strong> <span
+                                    id="item-quantity"><%= item.quantity %></span></p>
                     </div>
                 </div>
             </div>
@@ -120,13 +121,13 @@
         const fetchClientSecret = async () => {
             const response = await fetch('/assignment4/create-checkout-session', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     transactionId: transactionId,
                     quantity: quantity,
                 }),
             });
-            const {clientSecret}  = await response.json();
+            const {clientSecret} = await response.json();
             console.log('Client secret: ' + clientSecret);
             return clientSecret;
         };
@@ -140,17 +141,22 @@
         checkout.mount('#checkout');
     }
 
-
-    socket.emit('joinItemRoom', itemId, () => {
-        console.log(`Joined room for item ${itemId}`);
-    });
+    // socket.on('joinItemRoom', itemId, () => {
+    //     console.log(`Joined room for item ${itemId}`);
+    // });
 
     socket.on('quantityUpdated', (data) => {
         console.log('Received quantityUpdated:', data);
         if (data.itemId === itemId) {
-            document.getElementById('item-quantity').textContent = data.newQuantity;
+            const quantityElement = document.getElementById('item-quantity');
+            if (quantityElement) {
+                quantityElement.textContent = data.newQuantity;
+            } else {
+                console.error('Quantity element not found!');
+            }
         }
     });
+
 
     window.addEventListener('beforeunload', () => {
         socket.emit('leaveItemRoom', itemId);

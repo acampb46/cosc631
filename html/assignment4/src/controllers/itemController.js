@@ -46,6 +46,7 @@ const itemController = {
     }, async updateQuantity(req, res, next) {
         try {
             const {id, quantity} = req.body;
+            console.log('id: ' + id + 'quantity: ' + quantity);
             await Item.updateQuantity(id, quantity);
 
             // Get io from the app object

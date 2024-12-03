@@ -32,13 +32,12 @@ router.post('/complete', async (req, res) => {
 
         // Step 2: Update item quantity using the updateQuantity logic
         const itemId = transaction.itemId;
-        console.log('itemId: ' + itemId);
         const newQuantity = transaction.quantity - quantity;
+        console.log('newQuantity: ' + newQuantity);
 
         if (newQuantity < 0) {
             return res.status(400).json({message: 'Insufficient quantity for item.'});
         }
-
 
         // Update Quantity
         const updateResponse = await fetch('https://gerardcosc631.com/assignment4/items/updateQuantity', {
@@ -47,7 +46,7 @@ router.post('/complete', async (req, res) => {
             }, body: JSON.stringify({id: itemId, quantity: newQuantity}),
         });
 
-        if(updateResponse.ok) {
+        if (updateResponse.ok) {
             // Step 3: Mark item as sold if quantity is 0
             if (newQuantity === 0) {
                 await db.execute('UPDATE items SET status = ? WHERE id = ?', ['sold', itemId]);

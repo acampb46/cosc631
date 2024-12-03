@@ -41,8 +41,9 @@ module.exports = {
             const transaction = transactionRows[0];
 
             // Fetch additional details
-            const [itemRows] = await db.execute('SELECT title FROM items WHERE id = ?', [transaction.item_id]);
+            const [itemRows] = await db.execute('SELECT title, quantity FROM items WHERE id = ?', [transaction.item_id]);
             const itemTitle = itemRows[0].title;
+            const quantity = itemRows[0].quantity;
 
             const [buyerRows] = await db.execute('SELECT email FROM users WHERE id = ?', [transaction.buyer_id]);
             const [sellerRows] = await db.execute('SELECT email FROM users WHERE id = ?', [transaction.seller_id]);
@@ -61,6 +62,7 @@ module.exports = {
                 sellerId: transaction.seller_id,
                 itemId: transaction.item_id, // Needed for quantity update
                 amount: transaction.amount,
+                quantity,
             };
         } catch (error) {
             console.error('Error completing transaction:', error);

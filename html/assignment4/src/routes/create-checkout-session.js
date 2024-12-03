@@ -54,10 +54,12 @@ router.post('/', async (req, res) => {
                 },
             ],
             mode: 'payment',
-            payment_intent_data: {
-                setup_future_usage: 'on_session', // Optional: save card for reuse
+            metadata: {
+                transactionId: transactionId,
             },
-            //client_secret: paymentIntent.client_secret,
+            payment_intent_data: {
+                setup_future_usage: 'on_session',
+            },
             ui_mode: 'embedded',
             return_url: `https://gerardcosc631.com/assignment4/success/{CHECKOUT_SESSION_ID}`
         });

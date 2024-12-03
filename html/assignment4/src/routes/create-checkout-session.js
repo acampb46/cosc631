@@ -59,8 +59,7 @@ router.post('/', async (req, res) => {
             },
             //client_secret: paymentIntent.client_secret,
             ui_mode: 'embedded',
-            return_url: `https://gerardcosc631.com/assignment4/success`
-            //return_url: `https://gerardcosc631.com/assignment4/success/session_id={CHECKOUT_SESSION_ID}`
+            return_url: `https://gerardcosc631.com/assignment4/success/{CHECKOUT_SESSION_ID}`
         });
 
         console.log('Updating Payment Details in Database...');

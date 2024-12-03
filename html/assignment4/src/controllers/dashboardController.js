@@ -16,8 +16,8 @@ const dashboardController = {
         try {
             const userId = req.session.userId;
             const [purchases] = await db.execute(
-                'SELECT t.*, i.title FROM transactions t JOIN items i ON t.item_id = i.id WHERE t.buyer_id = ?',
-                [userId]
+                'SELECT t.*, i.title FROM transactions t JOIN items i ON t.item_id = i.id WHERE t.buyer_id = ? AND t.status = ?',
+                [userId, 'completed']
             );
             return purchases;
         } catch (error) {

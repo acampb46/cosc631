@@ -141,6 +141,11 @@
         checkout.mount('#checkout');
     }
 
+    socket.on('joinItemRoom', itemId, () => {
+        console.log(`Joined room for item ${itemId}`);
+        socket.join(`item-${itemId}`);
+    });
+
     socket.on('quantityUpdated', (data) => {
         console.log('Received quantityUpdated:', data);
         if (data.itemId === itemId) {
@@ -153,9 +158,6 @@
         }
     });
 
-    socket.on('joinItemRoom', itemId, () => {
-        console.log(`Joined room for item ${itemId}`);
-    });
 
 
     window.addEventListener('beforeunload', () => {

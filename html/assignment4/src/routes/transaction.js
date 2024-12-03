@@ -1,6 +1,6 @@
 const express = require('express');
 const {createTransaction, completeTransaction, getTransactionDetails} = require('../models/Transaction');
-const Item = require('../models/Item')
+const Item = require('../controllers/itemController')
 const db = require('../config/db');
 const router = express.Router();
 

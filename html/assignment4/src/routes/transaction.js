@@ -23,22 +23,32 @@ router.post('/create', async (req, res) => {
 
 // Complete a transaction (finalize transaction)
 router.post('/complete', async (req, res) => {
-    const {transactionId} = req.body;
+    const { transactionId } = req.body;
 
     try {
-        // Complete the transaction and update item quantity
+        // Step 1: Complete the transaction and get transaction details
         const transaction = await completeTransaction(transactionId);
 
-        // Step 4: Update item quantity
-        await db.execute('UPDATE items SET quantity = quantity - 1 WHERE id = ?', [transaction.itemId]);
+        // Step 2: Update item quantity using the updateQuantity logic
+        const itemId = transaction.itemId;
+        const newQuantity = transaction.quantity - 1; // Assuming quantity is decremented by 1
 
-        // Step 5: Mark item as sold if quantity is 0
-        await db.execute('UPDATE items SET status = ? WHERE id = ? AND quantity = 0', ['sold', transaction.itemId]);
+        if (newQuantity < 0) {
+            return res.status(400).json({ message: 'Insufficient quantity for item.' });
+        }
+
+        // Notify via socket and update the database
+        await Item.updateQuantity(itemId, newQuantity); // Calls the logic to update quantity and trigger socket
+
+        // Step 3: Mark item as sold if quantity is 0
+        if (newQuantity === 0) {
+            await db.execute('UPDATE items SET status = ? WHERE id = ?', ['sold', itemId]);
+        }
 
         res.status(200).json(transaction);
     } catch (error) {
         console.error('Error during transaction completion:', error);
-        res.status(500).json({message: error.message});
+        res.status(500).json({ message: error.message });
     }
 });
 

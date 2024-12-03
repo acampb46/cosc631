@@ -141,7 +141,7 @@
         checkout.mount('#checkout');
     }
 
-    socket.on('joinItemRoom', itemId, () => {
+    socket.emit('joinItemRoom', itemId, () => {
         console.log(`Joined room for item ${itemId}`);
         socket.join(`item-${itemId}`);
     });
@@ -157,8 +157,6 @@
             }
         }
     });
-
-
 
     window.addEventListener('beforeunload', () => {
         socket.emit('leaveItemRoom', itemId);

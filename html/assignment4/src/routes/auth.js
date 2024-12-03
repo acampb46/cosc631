@@ -30,10 +30,6 @@ router.get('/login', (req, res) => {
 // User logout
 router.post('/logout', authController.logout);
 
-router.get('/logout', (req, res) => {
-    res.redirect('assignment4');
-});
-
 // Token generation route
 router.post('/auth/generate-token', generateToken); // To generate a token
 

@@ -1,6 +1,6 @@
 const express = require('express');
 const {createTransaction, completeTransaction, getTransactionDetails} = require('../models/Transaction');
-const Item = require('../controllers/itemController')
+const itemController = require('../controllers/itemController')
 const db = require('../config/db');
 const router = express.Router();
 
@@ -38,8 +38,19 @@ router.post('/complete', async (req, res) => {
             return res.status(400).json({ message: 'Insufficient quantity for item.' });
         }
 
-        // Notify via socket and update the database
-        await Item.updateQuantity(itemId, newQuantity); // Calls the logic to update quantity and trigger socket
+        // Step 3: Simulate req, res, and next for `updateQuantity`
+        const simulatedReq = {
+            body: { id: itemId, quantity: newQuantity },
+        };
+        const simulatedRes = {
+            send: (data) => console.log('Quantity Updated:', data),
+        };
+        const simulatedNext = (error) => {
+            if (error) throw error;
+        };
+
+        // Call `updateQuantity`
+        await itemController.updateQuantity(simulatedReq, simulatedRes, simulatedNext);
 
         // Step 3: Mark item as sold if quantity is 0
         if (newQuantity === 0) {

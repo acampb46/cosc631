@@ -21,10 +21,12 @@
     <section class="mb-4">
         <div class="d-flex justify-content-between align-items-center">
             <h2>Your Items</h2>
-            <a href="/assignment4/items/submit" class="btn btn-primary">Add New Item</a>
             <% if ( userId === 2) { %>
                 <a href="/assignment4/commissions" class="btn btn-primary">View Commissions</a>
             <% } %>
+            <a href="/assignment4/items/submit" class="btn btn-primary">Add New Item</a>
+            <a href="/assignment4/auth/logout" class="btn btn-primary">Logout</a>
+
         </div>
         <% if (userItems && userItems.length > 0) { %>
             <ul class="list-group mt-3">

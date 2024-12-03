@@ -28,7 +28,7 @@ router.get('/login', (req, res) => {
 });
 
 // User logout
-router.post('/logout', authController.logout);
+router.get('/logout', authController.logout);
 
 // Token generation route
 router.post('/auth/generate-token', generateToken); // To generate a token

@@ -9,7 +9,7 @@ const Item = {
         return result.insertId;
     },
     async getAll() {
-        const [rows] = await db.execute('SELECT * FROM items WHERE quantity > 0');
+        const [rows] = await db.execute('SELECT * FROM items');
         return rows;
     },
     async getById(id) {

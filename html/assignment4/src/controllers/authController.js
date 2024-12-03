@@ -29,7 +29,6 @@ const authController = {
     },
     logout(req, res) {
         req.session.destroy();
-        res.send({ message: 'Logged out successfully' });
         res.redirect('/assignment4');
     },
 };

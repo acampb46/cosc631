@@ -141,10 +141,6 @@
         checkout.mount('#checkout');
     }
 
-    // socket.on('joinItemRoom', itemId, () => {
-    //     console.log(`Joined room for item ${itemId}`);
-    // });
-
     socket.on('quantityUpdated', (data) => {
         console.log('Received quantityUpdated:', data);
         if (data.itemId === itemId) {
@@ -155,6 +151,10 @@
                 console.error('Quantity element not found!');
             }
         }
+    });
+
+    socket.on('joinItemRoom', itemId, () => {
+        console.log(`Joined room for item ${itemId}`);
     });
 
 

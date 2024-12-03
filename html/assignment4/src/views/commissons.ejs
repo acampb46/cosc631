@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commission Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js for graph -->
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        a {
+            color: blue;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<h1>Commission Report</h1>
+
+<!-- Graph Section -->
+<canvas id="commissionGraph" width="600" height="400"></canvas>
+
+<script>
+    // Populate graph with data passed from server
+    const graphData = <%= JSON.stringify(graphData) %>;
+
+    const labels = graphData.map(data => data.date);
+    const dataPoints = graphData.map(data => data.total_commission);
+
+    const ctx = document.getElementById('commissionGraph').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Commission',
+                data: dataPoints,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderWidth: 2,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: true, position: 'top' },
+            },
+            scales: {
+                x: { title: { display: true, text: 'Date' } },
+                y: { title: { display: true, text: 'Commission ($)' } },
+            },
+        },
+    });
+</script>
+
+<!-- Table Section -->
+<h2>Commission Details</h2>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Commission Amount</th>
+        <th>Created At</th>
+        <th>Item</th>
+    </tr>
+    </thead>
+    <tbody>
+    <% commissions.forEach(commission => { %>
+        <tr>
+            <td><%= commission.commission_id %></td>
+            <td>$<%= commission.commission_amount.toFixed(2) %></td>
+            <td><%= commission.created_at %></td>
+            <td>
+                <a href="assignment4/item/<%= item_id %>">View Item</a>
+            </td>
+        </tr>
+    <% }) %>
+    </tbody>
+</table>
+</body>
+</html>

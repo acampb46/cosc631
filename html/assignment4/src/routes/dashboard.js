@@ -8,6 +8,7 @@ router.get('/load', async (req, res, next) => {
         // Fetch user items and purchased items
         const userItems = await dashboardController.userItems(req, res, next);
         const purchasedItems = await dashboardController.purchasedItems(req, res, next);
+        const userId = req.session.userId;
 
         // Render the dashboard.ejs view and pass the data
         console.log("Rendering dashboard.ejs");
@@ -15,7 +16,8 @@ router.get('/load', async (req, res, next) => {
             pageTitle: 'Your Dashboard',
             headerText: 'Welcome to Your Dashboard',
             userItems,
-            purchasedItems
+            purchasedItems,
+            userId,
         });
     } catch (error) {
         console.error(error);

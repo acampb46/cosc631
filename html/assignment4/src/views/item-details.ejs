@@ -148,7 +148,7 @@
 
     socket.on('quantityUpdated', (data) => {
         console.log('Received quantityUpdated:', data);
-        if (data.itemId === itemId) {
+        if (parseInt(data.itemId) === parseInt(itemId)) {
             const quantityElement = document.getElementById('item-quantity');
             if (quantityElement) {
                 quantityElement.textContent = data.newQuantity;

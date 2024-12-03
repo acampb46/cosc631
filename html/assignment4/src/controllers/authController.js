@@ -30,18 +30,7 @@ const authController = {
     logout(req, res) {
         req.session.destroy();
         res.send({ message: 'Logged out successfully' });
-        console.log('Routing to index.js');
-        const items = [{name: 'Antique Vase', price: '100'}, {
-            name: 'Vintage Watch',
-            price: '250'
-        }, {name: 'Signed Football', price: '75'},];
-
-        res.render('index', {
-            pageTitle: 'Auction Site Home',
-            headerText: 'Welcome to the Auction Site',
-            featuredHeading: 'Featured Items',
-            items,
-        });
+        res.redirect('/assignment4');
     },
 };
 

@@ -59,7 +59,7 @@ router.post('/', async (req, res) => {
             },
             //client_secret: paymentIntent.client_secret,
             ui_mode: 'embedded',
-            return_url: `https://gerardcosc631.com/assignment4/dashboard/load`
+            return_url: `https://gerardcosc631.com/assignment4/success`
         });
 
         console.log('Updating Payment Details in Database...');

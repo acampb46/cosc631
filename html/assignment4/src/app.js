@@ -75,6 +75,7 @@ app.use('/assignment4/search', require('./routes/search'));
 app.use('/assignment4/payment', require('./routes/payment'));
 app.use('/assignment4/purchase', require('./routes/purchase'));
 app.use('/assignment4/transaction', require('./routes/transaction'));
+app.use('assignment4/home', require('./routes/home'));
 
 //Stripe API Integrated Routes
 app.use('/assignment4/create-checkout-session', require('./routes/create-checkout-session'));

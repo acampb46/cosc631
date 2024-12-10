@@ -15,17 +15,20 @@
             border-radius: 8px;
             background: #f9f9f9;
         }
+
         .receipt-header {
             font-size: 1.5rem;
             font-weight: bold;
             text-align: center;
             margin-bottom: 20px;
         }
+
         .receipt-line {
             display: flex;
             justify-content: space-between;
             margin-bottom: 8px;
         }
+
         .receipt-footer {
             text-align: center;
             margin-top: 20px;
@@ -47,7 +50,6 @@
             <span>Item ID:</span>
             <span><%= purchase.item_id %></span>
         </div>
-        </div>
         <div class="receipt-line">
             <span>Price Paid:</span>
             <span>$<%= purchase.price_paid %></span>
@@ -60,13 +62,13 @@
             <span>Purchase Date:</span>
             <span><%= purchase.purchase_date %></span>
         </div>
+    </div>
 
-        <!-- Buy Again Button -->
-        <div class="receipt-footer">
-            <a href="/assignment4/items/<%= purchase.item_id %>" class="btn btn-primary btn-lg">Buy Again</a>
-            <a href="/assignment4/home" class="btn btn-primary btn-lg">Browse All Items</a>
-            <a href="/assignment4/dashboard/load" class="btn btn-primary btn-lg">Dashboard</a>
-        </div>
+    <!-- Buy Again Button -->
+    <div class="receipt-footer">
+        <a href="/assignment4/items/<%= purchase.item_id %>" class="btn btn-primary btn-lg">Buy Again</a>
+        <a href="/assignment4/home" class="btn btn-primary btn-lg">Browse All Items</a>
+        <a href="/assignment4/dashboard/load" class="btn btn-primary btn-lg">Dashboard</a>
     </div>
 </div>
 

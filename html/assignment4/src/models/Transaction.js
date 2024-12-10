@@ -46,10 +46,10 @@ module.exports = {
             // Insert into Purchases table
             const [purchaseResult] = await db.execute('INSERT INTO purchases (item_id, buyer_id, seller_id, price_paid, quantity_bought) VALUES (?,?,?,?,?)',
                 [transaction.item_id, transaction.buyer_id, transaction.seller_id, transaction.amount, quantity]);
-            const purchaseId = purchaseResult[0];
+            const purchaseId = purchaseResult[0].insertId;
 
             // Update the status of the transaction to 'completed'
-            const [updateResult] = await db.execute('UPDATE transactions SET status = ?, purchase_id = ? WHERE id = ?', ['completed', purchaseId.id, transactionId]);
+            const [updateResult] = await db.execute('UPDATE transactions SET status = ?, purchase_id = ? WHERE id = ?', ['completed', purchaseId, transactionId]);
 
             if (updateResult.affectedRows === 0) {
                 throw new Error('Transaction not found');

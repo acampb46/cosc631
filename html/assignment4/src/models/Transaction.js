@@ -54,7 +54,7 @@ module.exports = {
             // Insert into Purchases table
             const [purchaseResult] = await db.execute('INSERT INTO purchases (item_id, buyer_id, seller_id, price_paid, quantity_bought) VALUES (?,?,?,?,?)',
                 [transaction.item_id, transaction.buyer_id, transaction.seller_id, transaction.amount, quantity]);
-            const purchaseId = commissionResult[0];
+            const purchaseId = purchaseResult[0];
 
             const [buyerRows] = await db.execute('SELECT email FROM users WHERE id = ?', [transaction.buyer_id]);
             const [sellerRows] = await db.execute('SELECT email FROM users WHERE id = ?', [transaction.seller_id]);

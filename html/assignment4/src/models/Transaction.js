@@ -33,7 +33,7 @@ module.exports = {
             // Fetch transaction details
             const [transactionRows] = await db.execute('SELECT * FROM transactions WHERE id = ?', [transactionId]);
             const transaction = transactionRows[0];
-            const quantity = transactionRows[0].quantity_bought;
+            const quantity_bought = transactionRows[0].quantity_bought;
 
             // Insert information into commissions table
             const [commissionResult] = await db.execute('INSERT INTO commissions (purchase_id, commission_amount) VALUES (?,?)', [transactionId, transaction.commission]);
@@ -42,10 +42,11 @@ module.exports = {
             // Fetch additional details
             const [itemRows] = await db.execute('SELECT title, quantity FROM items WHERE id = ?', [transaction.item_id]);
             const itemTitle = itemRows[0].title;
+            const quantity = itemRows[0].quantity;
 
             // Insert into Purchases table
             const [purchaseResult] = await db.execute('INSERT INTO purchases (item_id, buyer_id, seller_id, price_paid, quantity_bought) VALUES (?,?,?,?,?)',
-                [transaction.item_id, transaction.buyer_id, transaction.seller_id, transaction.amount, quantity]);
+                [transaction.item_id, transaction.buyer_id, transaction.seller_id, transaction.amount, quantity_bought]);
             const purchaseId = purchaseResult.insertId;
 
             // Update the status of the transaction to 'completed'

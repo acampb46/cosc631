@@ -54,8 +54,12 @@
             <h2>Buy Now</h2>
             <form id="buy-form" class="row g-3">
                 <div class="col-md-6">
-                    <input type="number" id="buyQuantity" name="quantity" class="form-control"
-                           placeholder="Enter quantity" required>
+                    <label for="buyQuantity" class="form-label">Select Quantity</label>
+                    <select id="buyQuantity" name="quantity" class="form-select" required>
+                        <% for (let i = 1; i <= item.quantity; i++) { %>
+                            <option value="<%= i %>"><%= i %></option>
+                        <% } %>
+                    </select>
                 </div>
                 <div class="col-md-6">
                     <button type="submit" id="submit" class="btn btn-success">Check Out</button>
@@ -70,7 +74,7 @@
 </div>
 
 <footer class="text-center py-3 bg-dark text-light">
-    <p>&copy; 2024 Auction Site</p>
+    <p>&copy; 2024 The Bazaar</p>
 </footer>
 
 <!-- Bootstrap JS Bundle -->

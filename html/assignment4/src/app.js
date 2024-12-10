@@ -60,8 +60,8 @@ app.get('/assignment4', (req, res) => {
     }, {name: 'Signed Football', price: '75'},];
 
     res.render('index', {
-        pageTitle: 'Auction Site Home',
-        headerText: 'Welcome to the Auction Site',
+        pageTitle: 'The Bazaar Home',
+        headerText: 'Welcome to the The Bazaar',
         featuredHeading: 'Featured Items',
         items,
     });

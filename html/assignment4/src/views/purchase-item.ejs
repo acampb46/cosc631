@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Details</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container my-5">
+    <header class="text-center mb-4">
+        <h1>Purchase Details</h1>
+    </header>
+
+    <!-- Purchase Details Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-dark">
+            <tr>
+                <th>Purchase ID</th>
+                <th>Item ID</th>
+                <th>Price Paid</th>
+                <th>Quantity Bought</th>
+                <th>Purchase Date</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td><%= purchase.id %></td>
+                <td><%= purchase.item_id %></td>
+                <td>$<%= purchase.price_paid %></td>
+                <td><%= purchase.quantity_bought %></td>
+                <td><%= purchase.purchase_date %></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Buy Again Button -->
+    <div class="text-center mt-4">
+        <a href="/assignment4/items/<%= purchase.item_id %>" class="btn btn-primary btn-lg">Buy Again</a>
+    </div>
+</div>
+
+<!-- Bootstrap JS and Dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

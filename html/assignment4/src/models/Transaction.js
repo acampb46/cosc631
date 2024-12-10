@@ -30,13 +30,6 @@ module.exports = {
     // Complete a transaction (sends notifications)
     completeTransaction: async (transactionId) => {
         try {
-            // Update the status of the transaction to 'completed'
-            const [updateResult] = await db.execute('UPDATE transactions SET status = ? WHERE id = ?', ['completed', transactionId]);
-
-            if (updateResult.affectedRows === 0) {
-                throw new Error('Transaction not found');
-            }
-
             // Fetch transaction details
             const [transactionRows] = await db.execute('SELECT * FROM transactions WHERE id = ?', [transactionId]);
             const transaction = transactionRows[0];
@@ -50,11 +43,17 @@ module.exports = {
             const [itemRows] = await db.execute('SELECT title, quantity FROM items WHERE id = ?', [transaction.item_id]);
             const itemTitle = itemRows[0].title;
 
-
             // Insert into Purchases table
             const [purchaseResult] = await db.execute('INSERT INTO purchases (item_id, buyer_id, seller_id, price_paid, quantity_bought) VALUES (?,?,?,?,?)',
                 [transaction.item_id, transaction.buyer_id, transaction.seller_id, transaction.amount, quantity]);
-            const purchaseId = purchaseResult[0];
+            const purchaseId = purchaseResult[0].id;
+
+            // Update the status of the transaction to 'completed'
+            const [updateResult] = await db.execute('UPDATE transactions SET status = ?, purchase_id = ? WHERE id = ?', ['completed', purchaseId, transactionId]);
+
+            if (updateResult.affectedRows === 0) {
+                throw new Error('Transaction not found');
+            }
 
             const [buyerRows] = await db.execute('SELECT email FROM users WHERE id = ?', [transaction.buyer_id]);
             const [sellerRows] = await db.execute('SELECT email FROM users WHERE id = ?', [transaction.seller_id]);

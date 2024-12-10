@@ -19,7 +19,7 @@ module.exports = {
 
             // Return transaction details
             return {
-                transactionId, buyerId, sellerId, itemId, amount, commission, totalAmount, status: 'pending', quantity, // Initially pending until payment is processed
+                transactionId, buyerId, sellerId, itemId, amount, commission, totalAmount, status: 'pending', // Initially pending until payment is processed
             };
         } catch (error) {
             console.error('Error creating transaction:', error);

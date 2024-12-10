@@ -21,7 +21,7 @@ const purchaseController = {
             const totalPrice = item.price * quantity;
 
             // Step 3: Create the transaction record
-            const transactionResponse = await createTransaction(userId, item.seller_id, itemId, totalPrice);
+            const transactionResponse = await createTransaction(userId, item.seller_id, itemId, totalPrice, quantity);
             const transactionId = transactionResponse.transactionId;
 
             console.log("TransactionId: " + transactionId);

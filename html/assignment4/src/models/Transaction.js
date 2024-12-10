@@ -3,7 +3,7 @@ const {sendEmail} = require('../utils/notificationUtils'); // Optional notificat
 
 module.exports = {
     // Create a transaction
-    createTransaction: async (buyerId, sellerId, itemId, amount) => {
+    createTransaction: async (buyerId, sellerId, itemId, amount, quantity) => {
         const commission = amount * 0.05; // 5% commission
         const totalAmount = amount - commission; // Seller gets the total amount minus the commission
 
@@ -11,14 +11,15 @@ module.exports = {
 
         try {
             // Start a database transaction
-            const [result] = await db.execute('INSERT INTO transactions (buyer_id, seller_id, item_id, amount, status, transaction_date) VALUES (?, ?, ?, ?, ?, NOW())', [buyerId, sellerId, itemId, amount, 'pending']);
+            const [result] = await db.execute('INSERT INTO transactions (buyer_id, seller_id, item_id, amount, status, transaction_date, quantity_bought) VALUES (?, ?, ?, ?, ?, NOW(), ?)',
+                [buyerId, sellerId, itemId, amount, 'pending', quantity]);
 
             // Get the transaction ID
             const transactionId = result.insertId;
 
             // Return transaction details
             return {
-                transactionId, buyerId, sellerId, itemId, amount, commission, totalAmount, status: 'pending', // Initially pending until payment is processed
+                transactionId, buyerId, sellerId, itemId, amount, commission, totalAmount, status: 'pending', quantity, // Initially pending until payment is processed
             };
         } catch (error) {
             console.error('Error creating transaction:', error);
@@ -39,6 +40,7 @@ module.exports = {
             // Fetch transaction details
             const [transactionRows] = await db.execute('SELECT * FROM transactions WHERE id = ?', [transactionId]);
             const transaction = transactionRows[0];
+            const quantity = transactionRows[0].quantity_bought;
 
             // Insert information into commissions table
             const [commissionResult] = await db.execute('INSERT INTO commissions (purchase_id, commission_amount) VALUES (?,?)', [transactionId, transaction.commission]);
@@ -47,7 +49,7 @@ module.exports = {
             // Fetch additional details
             const [itemRows] = await db.execute('SELECT title, quantity FROM items WHERE id = ?', [transaction.item_id]);
             const itemTitle = itemRows[0].title;
-            const quantity = itemRows[0].quantity;
+
 
             // Insert into Purchases table
             const [purchaseResult] = await db.execute('INSERT INTO purchases (item_id, buyer_id, seller_id, price_paid, quantity_bought) VALUES (?,?,?,?,?)',

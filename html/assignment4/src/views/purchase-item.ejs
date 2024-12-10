@@ -47,17 +47,10 @@
             <span>Item ID:</span>
             <span><%= purchase.item_id %></span>
         </div>
-        <div class="receipt-line">
-            <span>Buyer ID:</span>
-            <span><%= purchase.buyer_id %></span>
-        </div>
-        <div class="receipt-line">
-            <span>Seller ID:</span>
-            <span><%= purchase.seller_id %></span>
         </div>
         <div class="receipt-line">
             <span>Price Paid:</span>
-            <span>$<%= purchase.price_paid.toFixed(2) %></span>
+            <span>$<%= purchase.price_paid %></span>
         </div>
         <div class="receipt-line">
             <span>Quantity Bought:</span>
@@ -71,6 +64,8 @@
         <!-- Buy Again Button -->
         <div class="receipt-footer">
             <a href="/assignment4/items/<%= purchase.item_id %>" class="btn btn-primary btn-lg">Buy Again</a>
+            <a href="/assignment4/home" class="btn btn-primary btn-lg">Browse All Items</a>
+            <a href="/assignment4/dashboard/load" class="btn btn-primary btn-lg">Dashboard</a>
         </div>
     </div>
 </div>

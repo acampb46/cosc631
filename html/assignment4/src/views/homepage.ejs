@@ -40,7 +40,9 @@
                                     alt="<%= item.title %>"
                                     style="object-fit: cover; height: 200px;">
                             <div class="card-body">
-                                <h5 class="card-title"><%= item.title %></h5>
+                                <a href="/assignment4/items/<%= item.id %>" class="card-title">
+                                    <%= item.title %>
+                                </a>
                                 <p class="card-text"><%= item.description %></p>
                             </div>
                         </div>

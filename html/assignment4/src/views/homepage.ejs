@@ -34,11 +34,12 @@
                 <% items.forEach(item => { %>
                     <div class="col-md-4">
                         <div class="card h-100">
-                            <img
-                                    src="<%= item.image_url %>"
-                                    class="card-img-top"
-                                    alt="<%= item.title %>"
-                                    style="object-fit: cover; height: 200px;">
+                            <% if (item.image_url) { %>
+                                <img src="<%= item.image_url %>" class="img-fluid rounded-start" alt="Item Image">
+                            <% } else { %>
+                                <img src="https://mnlht.com/wp-content/uploads/2017/06/no_image_placeholder.png" class="img-fluid rounded-start"
+                                     alt="Placeholder Image">
+                            <% } %>
                             <div class="card-body">
                                 <a href="/assignment4/items/<%= item.id %>" class="card-title">
                                     <%= item.title %>

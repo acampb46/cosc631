@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const purchaseController = require('../controllers/purchaseController');
+const db = require('../config/db');
 
 router.post('/buy', purchaseController.buyNow);
 
